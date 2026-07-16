@@ -19,8 +19,14 @@ fi
 echo "Setting up virtual environment..."
 export WORKON_HOME=$HOME/.virtualenvs
 mkdir -p $WORKON_HOME
+
+# Clear pip cache to free up disk space
+echo "Clearing pip cache..."
+rm -rf $HOME/.cache/pip || true
+
 if [ ! -d "$WORKON_HOME/smarthire-env" ]; then
-    virtualenv --python=/usr/bin/python3.10 $WORKON_HOME/smarthire-env
+    # Use --system-site-packages to inherit pre-installed heavy packages (spacy, numpy, etc.)
+    virtualenv --system-site-packages --python=/usr/bin/python3.10 $WORKON_HOME/smarthire-env
 fi
 
 # Activate virtual environment
@@ -28,7 +34,8 @@ source $WORKON_HOME/smarthire-env/bin/activate
 
 # 3. Install requirements
 echo "Installing dependencies..."
-pip install -r /home/$USER/SmartHireRepo/SmartHire/requirements.txt
+# Use --no-cache-dir to avoid storing caches and exceeding disk quota
+pip install --no-cache-dir -r /home/$USER/SmartHireRepo/SmartHire/requirements.txt
 
 # 4. Create WSGI file
 echo "Configuring WSGI file..."
