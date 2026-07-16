@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "584063351495",
+    "project_id": "smarthire-837ba",
+    "storage_bucket": "smarthire-837ba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:584063351495:android:79cf768ef47c2badbd1ce2",
+        "android_client_info": {
+          "package_name": "com.cs22.example.smarthire"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "584063351495-po8a2co090na2apvo9gk06efs8kpbhnh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6Qg5Jg2vUDIYrPlPYSchaV5xydoQq3xI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "584063351495-po8a2co090na2apvo9gk06efs8kpbhnh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ── CVS FOLDER ────────────────────────────────────────────────────────
+    match /cvs/{userId}/{fileName} {
+      // Users can only upload and read files in their own folder
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Recruiters might need to read CVs eventually, but for now we generate signed URLs via Cloud Functions or rely on the parsed text in Firestore.
+      // If direct read is needed by recruiters, you'd need custom claims or pass a token. Let's allow read if authenticated for simplicity of sharing.
+      allow read: if request.auth != null; 
+    }
+  }
+}

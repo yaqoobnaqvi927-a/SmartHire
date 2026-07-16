@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function getUserRole() {
+      // Access role from the custom claims (if set via auth) or fetch the user doc
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isRecruiter() {
+      return getUserRole() == 'recruiter';
+    }
+
+    // ── USERS ─────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // Users can read/write their own data. Recruiters can read all candidates.
+      allow read: if isOwner(userId) || isRecruiter();
+      allow write: if isOwner(userId);
+      
+      // Profiles subcollection
+      match /{profileType}/{docId} {
+        allow read: if isOwner(userId) || isRecruiter();
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // ── JOBS ──────────────────────────────────────────────────────────────
+    match /jobs/{jobId} {
+      // Anyone logged in can view jobs
+      allow read: if isAuthenticated();
+      // Only recruiters can create/update jobs, and only their own
+      allow create: if isAuthenticated() && isRecruiter() && request.resource.data.recruiter_uid == request.auth.uid;
+      allow update: if isAuthenticated() && isRecruiter() && resource.data.recruiter_uid == request.auth.uid;
+      allow delete: if isAuthenticated() && isRecruiter() && resource.data.recruiter_uid == request.auth.uid;
+    }
+
+    // ── APPLICATIONS ──────────────────────────────────────────────────────
+    match /applications/{appId} {
+      // Candidates can read/write their own apps; Recruiters can read apps for their jobs (complex to secure perfectly via rules alone, but basic check here)
+      allow read: if isAuthenticated() && (resource.data.applicant_uid == request.auth.uid || isRecruiter());
+      allow create: if isAuthenticated() && request.resource.data.applicant_uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.applicant_uid == request.auth.uid || isRecruiter());
+    }
+
+    // ── MESSAGES ──────────────────────────────────────────────────────────
+    match /messages/{convId} {
+      allow read: if isAuthenticated() && (request.auth.uid in resource.data.participants);
+      allow create: if isAuthenticated() && (request.auth.uid in request.resource.data.participants);
+      allow update: if isAuthenticated() && (request.auth.uid in resource.data.participants);
+      
+      match /thread/{messageId} {
+        // Can read/write messages if they are a participant in the parent conversation
+        allow read, write: if isAuthenticated() && 
+          (request.auth.uid in get(/databases/$(database)/documents/messages/$(convId)).data.participants);
+      }
+    }
+
+    // ── CVS ───────────────────────────────────────────────────────────────
+    match /cvs/{cvId} {
+      allow read, write: if isAuthenticated() && resource.data.user_uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_uid == request.auth.uid;
+    }
+
+    // ── INTERVIEWS ────────────────────────────────────────────────────────
+    match /interviews/{interviewId} {
+      allow read: if isAuthenticated() && (resource.data.participant_uid == request.auth.uid || resource.data.recruiter_uid == request.auth.uid);
+      allow create: if isAuthenticated() && isRecruiter() && request.resource.data.recruiter_uid == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.participant_uid == request.auth.uid || resource.data.recruiter_uid == request.auth.uid);
+    }
+  }
+}
