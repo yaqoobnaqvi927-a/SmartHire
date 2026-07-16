@@ -174,14 +174,15 @@ class AuthViewModel : ViewModel() {
     }
 
     // ── Google Sign-In ─────────────────────────────────────────────────────
-    fun loginWithGoogle(idToken: String) {
+    fun loginWithGoogle(idToken: String, selectedRole: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            AuthRepository.loginWithGoogle(idToken)
+            val dbRole = if (selectedRole == "recruiter") "recruiter" else "student"
+            AuthRepository.loginWithGoogle(idToken, dbRole)
                 .onSuccess { (uid, isNew) ->
                     try {
                         val data = if (isNew) null else AuthRepository.getUserData(uid)
-                        val role = if (isNew) "student" else data?.get("role") as? String ?: "student"
+                        val role = if (isNew) dbRole else data?.get("role") as? String ?: dbRole
                         
                         val googleReq = GoogleLoginRequest(id_token = idToken, role_type = role)
                         val authResponse = RetrofitClient.api.googleLogin(googleReq)

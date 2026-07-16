@@ -128,4 +128,10 @@ class RecruiterViewModel : ViewModel() {
             }
         }
     }
+
+    fun logout(onSuccess: () -> Unit) {
+        com.cs22.example.smarthire.firebase.AuthRepository.logout()
+        com.cs22.example.smarthire.network.RetrofitClient.tokenManager.clear()
+        onSuccess()
+    }
 }

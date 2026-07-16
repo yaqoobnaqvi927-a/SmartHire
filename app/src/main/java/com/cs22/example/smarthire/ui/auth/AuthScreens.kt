@@ -108,7 +108,8 @@ fun AuthScreen(viewModel: AuthViewModel, navController: NavHostController) {
             try {
                 val account = task.getResult(ApiException::class.java)
                 if (account?.idToken != null) {
-                    viewModel.loginWithGoogle(account.idToken!!)
+                    val role = if (selectedRole == "recruiter") "recruiter" else "student"
+                    viewModel.loginWithGoogle(account.idToken!!, role)
                 } else {
                     android.widget.Toast.makeText(context, "Google Sign-In failed: No ID Token", android.widget.Toast.LENGTH_SHORT).show()
                 }

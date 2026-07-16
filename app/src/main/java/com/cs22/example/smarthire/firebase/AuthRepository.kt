@@ -52,24 +52,31 @@ object AuthRepository {
     }
 
     // ── Google Sign-In ─────────────────────────────────────────────────────
-    suspend fun loginWithGoogle(idToken: String): Result<Pair<String, Boolean>> = runCatching {
+    suspend fun loginWithGoogle(idToken: String, selectedRole: String): Result<Pair<String, Boolean>> = runCatching {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         val result = auth.signInWithCredential(credential).await()
         val uid = result.user!!.uid
         val isNewUser = result.additionalUserInfo?.isNewUser == true
 
         if (isNewUser) {
+            val dbRole = if (selectedRole == "recruiter") "recruiter" else "student"
             // Auto-create Firestore profile for new Google users
             val userDoc = mapOf(
                 "uid"            to uid,
                 "email"          to result.user!!.email,
                 "username"       to (result.user!!.displayName ?: "User"),
-                "role"           to "student",
+                "role"           to dbRole,
                 "created_at"     to com.google.firebase.Timestamp.now(),
                 "setup_complete" to false,
                 "photo_url"      to result.user!!.photoUrl?.toString()
             )
             db.collection(Collections.USERS).document(uid).set(userDoc).await()
+
+            // Create role-specific profile sub-document
+            val profileCollection = if (dbRole == "recruiter") "recruiter_profile" else "candidate_profile"
+            db.collection(Collections.USERS).document(uid)
+                .collection(profileCollection).document("profile")
+                .set(mapOf("uid" to uid, "role" to dbRole)).await()
         }
         Pair(uid, isNewUser)
     }
