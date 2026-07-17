@@ -9,29 +9,33 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val LightThemeColorScheme = lightColorScheme(
-    primary = PrimaryAccent,
-    secondary = SuccessEmerald,
-    background = BackgroundLight,
-    surface = SurfaceLight,
+import androidx.compose.material3.darkColorScheme
+
+private val DarkThemeColorScheme = darkColorScheme(
+    primary = SmartHirePrimary,
+    secondary = SmartHireSecondary,
+    background = SmartHireBackground,
+    surface = SmartHireSurface,
+    surfaceVariant = SmartHireSurfaceContainer,
     onPrimary = androidx.compose.ui.graphics.Color.White,
     onSecondary = androidx.compose.ui.graphics.Color.White,
-    onBackground = DarkText,
-    onSurface = DarkText,
-    onSurfaceVariant = SlateText,
-    outline = LightOutline
+    onBackground = SmartHireOnSurface,
+    onSurface = SmartHireOnSurface,
+    onSurfaceVariant = SmartHireOnSurfaceVariant,
+    outline = SmartHireOutline,
+    error = SmartHireError
 )
 
 @Composable
 fun SmartHireTheme(content: @Composable () -> Unit) {
-    val colorScheme = LightThemeColorScheme
+    val colorScheme = DarkThemeColorScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = PrimaryAccent.toArgb()
+            window.statusBarColor = SmartHireBackground.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
-            window.navigationBarColor = SurfaceLight.toArgb()
+            window.navigationBarColor = SmartHireBackground.toArgb()
         }
     }
 

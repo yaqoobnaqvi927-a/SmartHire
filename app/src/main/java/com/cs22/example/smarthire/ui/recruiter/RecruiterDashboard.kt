@@ -664,11 +664,9 @@ fun PipelineTab(viewModel: RecruiterViewModel, navController: NavHostController)
             confirmButton = {
                 Button(
                     onClick = {
-                        val scheduledDateTime = "${interviewDate}T${interviewTime}:00Z"
                         selectedAppToSchedule?.id?.let { appId ->
-                            // Update application status to interview and record mock details
-                            viewModel.updateApplicationStatus(appId, "interview")
-                            // Rest of scheduling normally hits Django's POST api/interviews/
+                            // Update application status to interview and record real details
+                            viewModel.scheduleInterview(appId, interviewDate, interviewTime, interviewNotes)
                         }
                         showScheduleDialog = false
                         selectedAppToSchedule = null

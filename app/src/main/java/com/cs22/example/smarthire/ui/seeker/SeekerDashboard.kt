@@ -20,8 +20,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -36,13 +36,17 @@ import androidx.navigation.NavHostController
 import com.cs22.example.smarthire.model.*
 import com.cs22.example.smarthire.ui.components.AnimatedBottomBar
 import com.cs22.example.smarthire.ui.components.BottomNavigationItem
-import com.cs22.example.smarthire.ui.theme.*
 import com.cs22.example.smarthire.viewmodel.SeekerUiState
 import com.cs22.example.smarthire.viewmodel.SeekerViewModel
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import java.io.File
-import java.io.FileOutputStream
+
+// --- Colors based on HTML Palette ---
+val PremiumBg = Color(0xFF0F131D)
+val PremiumSurface = Color(0xFF161B28)
+val PremiumSurfaceContainer = Color(0xFF1D2433)
+val PremiumPrimary = Color(0xFF3B82F6)
+val PremiumSecondary = Color(0xFF8B5CF6)
+val PremiumText = Color(0xFFE1E2E4)
+val PremiumTextMuted = Color(0xFFC2C6D6)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,52 +54,77 @@ fun SeekerDashboard(viewModel: SeekerViewModel, navController: NavHostController
     var selectedTab by remember { mutableIntStateOf(0) }
     val bottomNavItems = listOf(
         BottomNavigationItem(icon = Icons.Default.Home, label = "Home"),
-        BottomNavigationItem(icon = Icons.Default.Work, label = "Jobs"),
-        BottomNavigationItem(icon = Icons.Default.FileUpload, label = "Upload CV"),
-        BottomNavigationItem(icon = Icons.Default.ChatBubble, label = "Applied"),
+        BottomNavigationItem(icon = Icons.Default.Search, label = "Jobs"),
+        BottomNavigationItem(icon = Icons.Default.CloudUpload, label = "Upload CV"),
+        BottomNavigationItem(icon = Icons.Default.FactCheck, label = "Applied"),
         BottomNavigationItem(icon = Icons.Default.Person, label = "Profile")
     )
     
     val ctx = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {
-            viewModel.uploadCv(it, "resume.pdf")
-        }
+        uri?.let { viewModel.uploadCv(it, ctx) }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Box(Modifier.fillMaxWidth(), Alignment.Center) { Text("SmartHire", fontWeight = FontWeight.Bold, color = SmartHirePrimary, fontSize = 22.sp) } },
-                navigationIcon = { IconButton(onClick = {}) { Icon(Icons.Default.Menu, "Menu", tint = SmartHireOnSurfaceVariant) } },
-                actions = { IconButton(onClick = { navController.navigate("notifications") }) { Icon(Icons.Default.Notifications, "Notifications", tint = SmartHireOnSurfaceVariant) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SmartHireBackground.copy(alpha = 0.9f)),
-                modifier = Modifier.shadow(1.dp)
-            )
-        },
-        bottomBar = { 
-            AnimatedBottomBar(
-                items = bottomNavItems, 
-                selectedTab = selectedTab, 
-                onTabSelected = { 
-                    if (it == 2) {
-                        launcher.launch("application/pdf")
-                    } else {
-                        selectedTab = it 
+    Box(modifier = Modifier.fillMaxSize().background(PremiumBg)) {
+        // Atmospheric effects
+        Box(modifier = Modifier.offset(x = (-100).dp, y = (-100).dp).size(400.dp).background(PremiumPrimary.copy(alpha = 0.05f), CircleShape).blur(120.dp))
+        Box(modifier = Modifier.align(Alignment.BottomEnd).offset(x = 100.dp, y = 100.dp).size(400.dp).background(PremiumSecondary.copy(alpha = 0.05f), CircleShape).blur(120.dp))
+
+        Scaffold(
+            topBar = {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier.size(48.dp).clip(CircleShape).background(PremiumSurfaceContainer).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Person, null, tint = PremiumTextMuted)
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Hello,", fontSize = 14.sp, color = PremiumTextMuted)
+                            Text("Seeker", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PremiumText)
+                        }
                     }
-                }, 
-                activeColor = SmartHirePrimary, 
-                backgroundColor = SmartHireBackground
-            ) 
-        },
-        containerColor = SmartHireBackground
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            when (selectedTab) {
-                0 -> HomeTab(viewModel, navController)
-                1 -> JobsTab(viewModel, navController)
-                3 -> AppliedTab(viewModel, navController)
-                4 -> ProfileTab(viewModel, navController)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        IconButton(onClick = { navController.navigate("notifications") }, modifier = Modifier.size(48.dp).clip(CircleShape).background(PremiumSurfaceContainer).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)) {
+                            Icon(Icons.Default.Notifications, null, tint = PremiumText)
+                        }
+                        IconButton(onClick = { navController.navigate("settings") }, modifier = Modifier.size(48.dp).clip(CircleShape).background(PremiumSurfaceContainer).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)) {
+                            Icon(Icons.Default.Settings, null, tint = PremiumText)
+                        }
+                    }
+                }
+            },
+            bottomBar = { 
+                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp, start = 24.dp, end = 24.dp)) {
+                    Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(PremiumSurfaceContainer.copy(alpha = 0.8f)).border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(32.dp)).padding(4.dp)) {
+                        AnimatedBottomBar(
+                            items = bottomNavItems, 
+                            selectedTab = selectedTab, 
+                            onTabSelected = { 
+                                if (it == 2) launcher.launch("application/pdf")
+                                else selectedTab = it 
+                            }, 
+                            activeColor = PremiumPrimary, 
+                            backgroundColor = Color.Transparent
+                        )
+                    }
+                }
+            },
+            containerColor = Color.Transparent
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+                when (selectedTab) {
+                    0 -> HomeTab(viewModel, navController)
+                    1 -> JobsTab(viewModel, navController)
+                    3 -> AppliedTab(viewModel, navController)
+                    4 -> ProfileTab(viewModel, navController)
+                }
             }
         }
     }
@@ -106,197 +135,198 @@ fun SeekerDashboard(viewModel: SeekerViewModel, navController: NavHostController
 fun HomeTab(viewModel: SeekerViewModel, navController: NavHostController) {
     val topMatchState by viewModel.topMatchState.collectAsState()
     val statsState by viewModel.statsState.collectAsState()
-    val interviewsState by viewModel.interviewsState.collectAsState()
     val recommendedJobsState by viewModel.recommendedJobsState.collectAsState()
     
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Hero Match
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp), 
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        // AI Match of the Day
         item {
             when (val s = topMatchState) {
-                is SeekerUiState.Success -> HeroMatchCard(s.data)
-                is SeekerUiState.Loading -> Box(Modifier.fillMaxWidth().height(200.dp), Alignment.Center) { CircularProgressIndicator(color = SmartHirePrimary) }
-                else -> Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(SmartHireSurfaceContainer)) {
-                    Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Upload your CV to get AI-matched jobs!", color = SmartHireOnSurfaceVariant)
+                is SeekerUiState.Success -> HeroMatchCard(s.data, navController)
+                is SeekerUiState.Loading -> Box(Modifier.fillMaxWidth().height(200.dp), Alignment.Center) { CircularProgressIndicator(color = PremiumPrimary) }
+                else -> {
+                    // Empty state
+                    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(PremiumSurface)) {
+                        Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(PremiumSurface, PremiumSurfaceContainer)))) {
+                            Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.AutoAwesome, null, tint = PremiumPrimary, modifier = Modifier.size(48.dp))
+                                Spacer(Modifier.height(16.dp))
+                                Text("Unlock AI Matchmaking", color = PremiumText, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Text("Upload your CV to let Gemini AI find your perfect job matches.", color = PremiumTextMuted, textAlign = TextAlign.Center, fontSize = 14.sp)
+                            }
+                        }
                     }
                 }
             }
         }
-        
-        // AI Recommended Jobs
+
+        // Quick Stats
         item {
-            Text("AI Recommended Jobs", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
+            Text("Quick Stats", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PremiumText)
+        }
+        item {
+            val stats = (statsState as? SeekerUiState.Success)?.data
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                StatCard(Modifier.weight(1f), Icons.Default.Visibility, stats?.profile_views?.toString() ?: "0", "Profile Views")
+                StatCard(Modifier.weight(1f), Icons.Default.Send, stats?.apps_sent?.toString() ?: "0", "Apps Sent")
+                StatCard(Modifier.weight(1f), Icons.Default.Event, "0", "Interviews")
+            }
+        }
+
+        // Recommended Jobs
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Recommended for You", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PremiumText)
+                Text("See All", fontSize = 14.sp, color = PremiumPrimary)
+            }
         }
         item {
             when (val s = recommendedJobsState) {
                 is SeekerUiState.Success -> {
                     if (s.data.isEmpty()) {
-                        Text("No job recommendations yet. Upload your CV to receive tailored matches.", color = SmartHireOnSurfaceVariant, fontSize = 14.sp)
+                        Text("No job recommendations yet. Upload your CV to receive tailored matches.", color = PremiumTextMuted, fontSize = 14.sp)
                     } else {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            items(s.data) { job ->
-                                RecommendedJobCard(job)
-                            }
+                            items(s.data) { job -> RecommendedJobCard(job, navController) }
                         }
                     }
                 }
-                is SeekerUiState.Loading -> Box(Modifier.fillMaxWidth().height(120.dp), Alignment.Center) { CircularProgressIndicator(color = SmartHirePrimary) }
-                else -> Text("Upload your CV to unlock AI job matches", color = SmartHireOnSurfaceVariant, fontSize = 14.sp)
+                is SeekerUiState.Loading -> Box(Modifier.fillMaxWidth().height(120.dp), Alignment.Center) { CircularProgressIndicator(color = PremiumPrimary) }
+                else -> Text("Upload your CV to unlock AI job matches", color = PremiumTextMuted, fontSize = 14.sp)
             }
         }
-
-        // Stats
-        item {
-            Text("Quick Stats", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
-        }
-        item {
-            val stats = (statsState as? SeekerUiState.Success)?.data
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard(Modifier.weight(1f), Icons.Default.Send, stats?.apps_sent?.toString() ?: "0", "Apps Sent")
-                StatCard(Modifier.weight(1f), Icons.Default.Visibility, stats?.profile_views?.toString() ?: "0", "Profile Views")
-            }
-        }
-        item {
-            val stats = (statsState as? SeekerUiState.Success)?.data
-            ProfileStrengthCard(stats?.profile_completeness ?: 0)
-        }
-        // Interviews
-        item { Text("Upcoming Interviews", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface) }
-        item {
-            when (val s = interviewsState) {
-                is SeekerUiState.Success -> {
-                    if (s.data.isEmpty()) Text("No upcoming interviews", color = SmartHireOnSurfaceVariant, fontSize = 14.sp)
-                    else LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        items(s.data) { iv -> 
-                            InterviewCard(
-                                title = iv.job_title ?: "Interview", 
-                                company = iv.company ?: "", 
-                                time = iv.scheduled_at,
-                                onCancel = { iv.id.toIntOrNull()?.let { viewModel.cancelInterview(it) } },
-                                onComplete = { iv.id.toIntOrNull()?.let { viewModel.completeInterview(it) } }
-                            ) 
-                        }
-                    }
-                }
-                else -> Text("No upcoming interviews", color = SmartHireOnSurfaceVariant, fontSize = 14.sp)
-            }
-        }
-        item { Spacer(Modifier.height(80.dp)) }
+        item { Spacer(Modifier.height(100.dp)) } // Bottom nav padding
     }
 }
 
 @Composable
-fun RecommendedJobCard(job: DjangoJob) {
-    Card(
+fun HeroMatchCard(job: DjangoJob, navController: NavHostController) {
+    val matchPct = (job.match_percentage.toFloat() / 100f).coerceIn(0f, 1f)
+    
+    Box(
         modifier = Modifier
-            .width(260.dp)
-            .height(150.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(SmartHireSurface),
-        border = BorderStroke(1.dp, SmartHireOutline)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(Color(0xFF1D1B4B)) // Deep indigo
+            .border(1.dp, PremiumSecondary.copy(alpha = 0.3f), RoundedCornerShape(28.dp))
     ) {
-        Column(Modifier.padding(16.dp).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
-            Column {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        job.title, 
-                        fontWeight = FontWeight.Bold, 
-                        fontSize = 14.sp, 
-                        color = SmartHireOnSurface, 
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Surface(color = SmartHirePrimary.copy(0.1f), shape = RoundedCornerShape(6.dp)) {
-                        Text(
-                            "${job.match_percentage.toInt()}% Match", 
-                            color = SmartHirePrimary, 
-                            fontSize = 10.sp, 
-                            fontWeight = FontWeight.Bold, 
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        // Gradient glow behind card
+        Box(modifier = Modifier.fillMaxSize().background(Brush.radialGradient(listOf(PremiumSecondary.copy(alpha = 0.3f), Color.Transparent))))
+
+        Column(Modifier.padding(24.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Surface(color = PremiumSecondary.copy(0.2f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, PremiumSecondary.copy(0.5f))) {
+                    Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.AutoAwesome, null, Modifier.size(16.dp), PremiumSecondary)
+                        Spacer(Modifier.width(6.dp))
+                        Text("AI Match of the Day", fontSize = 12.sp, color = PremiumSecondary, fontWeight = FontWeight.Bold)
+                    }
+                }
+                IconButton(onClick = {}) { Icon(Icons.Default.BookmarkBorder, null, tint = PremiumText) }
+            }
+            
+            Spacer(Modifier.height(24.dp))
+            
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                // Match Progress Circle
+                Box(Modifier.size(80.dp), Alignment.Center) {
+                    Canvas(Modifier.fillMaxSize()) {
+                        drawCircle(PremiumSurfaceContainer, style = Stroke(6.dp.toPx()))
+                        drawArc(
+                            brush = Brush.sweepGradient(listOf(PremiumPrimary, PremiumSecondary, PremiumPrimary)), 
+                            startAngle = -90f, sweepAngle = matchPct * 360f, useCenter = false, style = Stroke(8.dp.toPx(), cap = StrokeCap.Round)
                         )
                     }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("${job.match_percentage.toInt()}%", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    }
                 }
-                Text(job.company, fontSize = 12.sp, color = SmartHireOnSurfaceVariant, maxLines = 1)
+                Spacer(Modifier.width(20.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(job.title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(Modifier.height(4.dp))
+                    Text(job.company, fontSize = 16.sp, color = PremiumTextMuted)
+                    Spacer(Modifier.height(8.dp))
+                    Text(job.location.ifEmpty { job.job_type.uppercase() }, fontSize = 14.sp, color = PremiumTextMuted, fontWeight = FontWeight.Medium)
+                }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            
+            Spacer(Modifier.height(24.dp))
+            
+            Button(
+                onClick = { navController.navigate("job_detail/${job.id}") },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PremiumPrimary),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+            ) {
+                Text("Review Match Details", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Default.ArrowForward, null)
+            }
+        }
+    }
+}
+
+@Composable
+fun RecommendedJobCard(job: DjangoJob, navController: NavHostController) {
+    Card(
+        modifier = Modifier.width(280.dp).clickable { navController.navigate("job_detail/${job.id}") },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(PremiumSurface),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+    ) {
+        Column(Modifier.padding(20.dp).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+                    Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(PremiumSurfaceContainer), Alignment.Center) {
+                        Icon(Icons.Default.Business, null, tint = PremiumTextMuted) // Company Logo
+                    }
+                    Surface(color = PremiumPrimary.copy(0.1f), shape = RoundedCornerShape(8.dp)) {
+                        Text("${job.match_percentage.toInt()}% Match", color = PremiumPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(job.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = PremiumText, maxLines = 1)
+                Spacer(Modifier.height(4.dp))
+                Text(job.company, fontSize = 14.sp, color = PremiumTextMuted, maxLines = 1)
+            }
+            
+            Spacer(Modifier.height(16.dp))
+            
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 job.skillsList.take(2).forEach { skill -> SkillBadge(skill) }
+                if(job.skillsList.size > 2) {
+                    SkillBadge("+${job.skillsList.size - 2}")
+                }
             }
         }
     }
 }
 
-@Composable fun HeroMatchCard(job: DjangoJob) {
-    val matchPct = (job.match_percentage.toFloat() / 100f).coerceIn(0f, 1f)
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(SmartHireSurface), border = BorderStroke(1.dp, SmartHireOutline), elevation = CardDefaults.cardElevation(4.dp)) {
-        Box {
-            Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(SmartHirePrimary.copy(0.05f), Color.Transparent))))
-            Column(Modifier.padding(20.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(80.dp), Alignment.Center) {
-                        Canvas(Modifier.fillMaxSize()) {
-                            drawCircle(Color(0xFFF1F5F9), style = Stroke(6.dp.toPx()))
-                            drawArc(color = SmartHirePrimary, startAngle = -90f, sweepAngle = matchPct * 360f, useCenter = false, style = Stroke(6.dp.toPx(), cap = StrokeCap.Round))
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("${job.match_percentage.toInt()}%", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SmartHirePrimary)
-                            Text("MATCH", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = SmartHirePrimary)
-                        }
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Column(Modifier.weight(1f)) {
-                        Surface(color = SmartHirePrimary.copy(0.1f), shape = CircleShape, border = BorderStroke(1.dp, SmartHirePrimary.copy(0.2f))) {
-                            Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.AutoAwesome, null, Modifier.size(12.dp), SmartHirePrimary)
-                                Spacer(Modifier.width(4.dp)); Text("Match of the Day", fontSize = 10.sp, color = SmartHirePrimary, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        Text(job.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
-                        Text("${job.company} • ${job.location.ifEmpty { job.job_type }}", fontSize = 12.sp, color = SmartHireOnSurfaceVariant)
-                    }
-                }
-                if (job.skillsList.isNotEmpty()) {
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        job.skillsList.take(3).forEach { skill -> SkillBadge(skill) }
-                        if (job.salary_range.isNotEmpty()) SkillBadge(job.salary_range)
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-                Button(onClick = {}, Modifier.width(140.dp), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(SmartHirePrimary)) { Text("Review Match", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
-            }
-        }
-    }
+@Composable fun SkillBadge(label: String) { 
+    Surface(color = PremiumSurfaceContainer, shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))) { 
+        Text(label, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), color = PremiumTextMuted) 
+    } 
 }
 
-@Composable fun SkillBadge(label: String) { Surface(color = SmartHireSurfaceContainer, shape = RoundedCornerShape(6.dp), border = BorderStroke(1.dp, SmartHireOutline)) { Text(label, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = SmartHireOnSurface) } }
-@Composable fun StatCard(modifier: Modifier, icon: ImageVector, value: String, label: String) { Card(modifier, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(SmartHireSurface), border = BorderStroke(1.dp, SmartHireOutline)) { Column(Modifier.padding(16.dp)) { Icon(icon, null, tint = SmartHirePrimary, modifier = Modifier.size(24.dp)); Spacer(Modifier.height(8.dp)); Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface); Text(label, fontSize = 12.sp, color = SmartHireOnSurfaceVariant) } } }
-@Composable fun ProfileStrengthCard(pct: Int) { Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(SmartHireSurface), border = BorderStroke(1.dp, SmartHireOutline)) { Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) { Text("Profile Strength", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SmartHirePrimary); Text("$pct%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SmartHirePrimary) }; Spacer(Modifier.height(8.dp)); LinearProgressIndicator(progress = { pct / 100f }, modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape), color = SmartHirePrimary, trackColor = SmartHireSurfaceContainer) } } }
-
-@Composable fun InterviewCard(title: String, company: String, time: String, onCancel: () -> Unit, onComplete: () -> Unit) { 
-    Card(Modifier.width(260.dp), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(SmartHireSurface), border = BorderStroke(1.dp, SmartHireOutline)) { 
-        Column(Modifier.padding(16.dp)) { 
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = SmartHireOnSurface); 
-            Text(company, fontSize = 12.sp, color = SmartHireOnSurfaceVariant); 
-            Spacer(Modifier.height(8.dp)); 
-            Surface(color = SmartHireSurfaceContainer, shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) { 
-                Text(text = time.take(16), modifier = Modifier.padding(8.dp), textAlign = TextAlign.Center, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = SmartHirePrimary) 
-            }
-            Spacer(Modifier.height(10.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onCancel, Modifier.weight(1f)) {
-                    Text("Cancel", color = Color.Red, fontSize = 12.sp)
-                }
-                Button(onClick = onComplete, Modifier.weight(1f), colors = ButtonDefaults.buttonColors(SmartHirePrimary), shape = RoundedCornerShape(8.dp)) {
-                    Text("Done", fontSize = 12.sp)
-                }
-            }
+@Composable fun StatCard(modifier: Modifier, icon: ImageVector, value: String, label: String) { 
+    Card(modifier, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(PremiumSurface), border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))) { 
+        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) { 
+            Icon(icon, null, tint = PremiumPrimary, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.height(12.dp))
+            Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PremiumText)
+            Spacer(Modifier.height(4.dp))
+            Text(label, fontSize = 12.sp, color = PremiumTextMuted) 
         } 
     } 
 }
 
 // ══════════════════ JOBS TAB ══════════════════
+// Re-using the Jobs tab logic, applying dark theme colors
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
@@ -305,56 +335,105 @@ fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
     val coverLetterState by viewModel.coverLetterState.collectAsState()
 
     if (coverLetterState is SeekerUiState.Success) {
-        AlertDialog(onDismissRequest = { viewModel.resetCoverLetterState() }, title = { Text("AI Cover Letter") },
-            text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text((coverLetterState as SeekerUiState.Success<String>).data) } },
-            confirmButton = { TextButton(onClick = { viewModel.resetCoverLetterState() }) { Text("Close", color = SmartHirePrimary) } })
+        AlertDialog(
+            onDismissRequest = { viewModel.resetCoverLetterState() }, 
+            title = { Text("AI Cover Letter", color = PremiumText) },
+            text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text((coverLetterState as SeekerUiState.Success<String>).data, color = PremiumTextMuted) } },
+            confirmButton = { TextButton(onClick = { viewModel.resetCoverLetterState() }) { Text("Close", color = PremiumPrimary) } },
+            containerColor = PremiumSurface
+        )
     }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Search Jobs", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(value = searchSkills, onValueChange = { searchSkills = it }, placeholder = { Text("Skills (e.g. python, react)") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = SmartHireOutline, focusedBorderColor = SmartHirePrimary, unfocusedContainerColor = SmartHireSurfaceContainer, focusedContainerColor = Color.White))
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = { viewModel.searchJobs(searchSkills, "", "", "") }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(SmartHirePrimary)) { Text("Search") }
+    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).padding(top = 16.dp)) {
+        Text("Search Jobs", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PremiumText)
         Spacer(Modifier.height(16.dp))
+        
+        OutlinedTextField(
+            value = searchSkills, onValueChange = { searchSkills = it }, 
+            placeholder = { Text("Skills (e.g. python, react)", color = PremiumTextMuted.copy(alpha=0.5f)) },
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = Color.Transparent, focusedBorderColor = PremiumPrimary, 
+                unfocusedContainerColor = PremiumSurface, focusedContainerColor = PremiumSurface,
+                unfocusedTextColor = PremiumText, focusedTextColor = PremiumText
+            ),
+            leadingIcon = { Icon(Icons.Default.Search, null, tint = PremiumTextMuted) }
+        )
+        Spacer(Modifier.height(12.dp))
+        Button(
+            onClick = { viewModel.searchJobs(searchSkills, "", "", "") }, 
+            Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(28.dp), 
+            colors = ButtonDefaults.buttonColors(PremiumPrimary)
+        ) { Text("Search", fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+        
+        Spacer(Modifier.height(24.dp))
 
         when (val s = jobsState) {
-            is SeekerUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = SmartHirePrimary) }
+            is SeekerUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = PremiumPrimary) }
             is SeekerUiState.Error -> Text(s.message, color = Color.Red)
-            is SeekerUiState.Success -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            is SeekerUiState.Success -> LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 itemsIndexed(s.data) { idx, job ->
                     var expanded by remember { mutableStateOf(false) }
-                    Card(Modifier.fillMaxWidth().animateContentSize().clickable { expanded = !expanded }, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(SmartHireSurface), border = BorderStroke(1.dp, SmartHireOutline)) {
-                        Column(Modifier.padding(16.dp)) {
+                    Card(
+                        Modifier.fillMaxWidth().animateContentSize().clickable { 
+                            expanded = !expanded 
+                            if (expanded) job.id?.toIntOrNull()?.let { viewModel.fetchMatchScore(it) }
+                        }, 
+                        shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(PremiumSurface), border = BorderStroke(1.dp, Color.White.copy(alpha=0.05f))
+                    ) {
+                        Column(Modifier.padding(20.dp)) {
                             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                                Text(job.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface, modifier = Modifier.weight(1f))
-                                Icon(if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, "Expand", tint = SmartHirePrimary)
+                                Text(job.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PremiumText, modifier = Modifier.weight(1f))
+                                Icon(if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, "Expand", tint = PremiumTextMuted)
                             }
-                            Text("${job.company} • ${job.job_type.uppercase()}", color = SmartHirePrimary, fontSize = 13.sp)
-                            if (job.match_percentage > 0) Text("AI Match: ${job.match_percentage.toInt()}%", color = SmartHireSuccess, fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
-                            Spacer(Modifier.height(8.dp))
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                job.skillsList.take(5).forEach { skill -> Surface(color = SmartHirePrimary.copy(0.1f), shape = RoundedCornerShape(6.dp), modifier = Modifier.padding(bottom = 4.dp)) { Text(text = skill, color = SmartHirePrimary, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) } }
+                            Spacer(Modifier.height(4.dp))
+                            Text("${job.company} • ${job.job_type.uppercase()}", color = PremiumPrimary, fontSize = 14.sp)
+                            
+                            Spacer(Modifier.height(12.dp))
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                job.skillsList.take(5).forEach { skill -> SkillBadge(skill) }
                             }
+                            
                             AnimatedVisibility(expanded) {
-                                Column(Modifier.padding(top = 12.dp)) {
-                                    if (job.description.isNotEmpty()) Text(job.description.take(200), color = SmartHireOnSurfaceVariant, fontSize = 13.sp)
-                                    Spacer(Modifier.height(12.dp))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        var applying by remember { mutableStateOf(false) }
-                                        Button(onClick = { applying = true; job.id?.let { viewModel.applyForJob(it) { appId -> applying = false; navController.navigate("chat/$appId") } } }, Modifier.weight(1f), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(SmartHirePrimary)) {
-                                            if (applying) CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White) else Text("Apply & Chat", fontSize = 12.sp)
+                                Column(Modifier.padding(top = 16.dp)) {
+                                    val matchScoreState by viewModel.matchScoreState.collectAsState()
+                                    if (matchScoreState is SeekerUiState.Success) {
+                                        val matchMap = (matchScoreState as SeekerUiState.Success<Map<String, Any>>).data
+                                        val score = (matchMap["match_percentage"] as? Number)?.toInt() ?: 0
+                                        if (score > 0) {
+                                            Surface(color = Color(0xFF10B981).copy(0.1f), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                                                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Default.AutoAwesome, "AI", tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                                                    Spacer(Modifier.width(12.dp))
+                                                    Text("Live AI Match Preview: $score%", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                }
+                                            }
                                         }
-                                        OutlinedButton(onClick = { job.id?.let { viewModel.generateCoverLetter(it) } }, Modifier.weight(1f), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = SmartHirePrimary)) { Text("AI Cover Letter", fontSize = 11.sp) }
+                                    } else if (matchScoreState is SeekerUiState.Loading) {
+                                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), color = PremiumPrimary)
+                                    }
+                                    
+                                    if (job.description.isNotEmpty()) Text(job.description.take(200) + "...", color = PremiumTextMuted, fontSize = 14.sp, lineHeight = 20.sp)
+                                    Spacer(Modifier.height(20.dp))
+                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        var applying by remember { mutableStateOf(false) }
+                                        Button(
+                                            onClick = { applying = true; job.id?.let { viewModel.applyForJob(it) { appId -> applying = false; navController.navigate("chat/$appId") } } }, 
+                                            Modifier.weight(1f).height(48.dp), shape = RoundedCornerShape(24.dp), colors = ButtonDefaults.buttonColors(PremiumPrimary)
+                                        ) {
+                                            if (applying) CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White) else Text("Apply & Chat", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                        OutlinedButton(
+                                            onClick = { job.id?.let { navController.navigate("job_detail/$it") } }, 
+                                            Modifier.weight(1f).height(48.dp), shape = RoundedCornerShape(24.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = PremiumText), border = BorderStroke(1.dp, Color.White.copy(alpha=0.1f))
+                                        ) { Text("View Details", fontSize = 14.sp) }
                                     }
                                 }
                             }
                         }
                     }
                 }
-                item { Spacer(Modifier.height(80.dp)) }
+                item { Spacer(Modifier.height(100.dp)) }
             }
             else -> {}
         }
@@ -362,130 +441,9 @@ fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
 }
 
 // ══════════════════ APPLIED TAB ══════════════════
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AppliedTab(viewModel: SeekerViewModel, navController: NavHostController) {
-    val state by viewModel.applicationsState.collectAsState()
-    val skillGapState by viewModel.skillGapState.collectAsState()
-    
-    LaunchedEffect(Unit) { viewModel.getApplications() }
-    
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Your Applications", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
-        Spacer(Modifier.height(16.dp))
-        when (val s = state) {
-            is SeekerUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = SmartHirePrimary) }
-            is SeekerUiState.Error -> Text(s.message, color = Color.Red)
-            is SeekerUiState.Success -> {
-                if (s.data.isEmpty()) Box(Modifier.fillMaxSize(), Alignment.Center) { Text("No applications yet. Start searching!", color = SmartHireOnSurfaceVariant) }
-                else LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(s.data) { app ->
-                        var expanded by remember { mutableStateOf(false) }
-                        
-                        Card(
-                            Modifier.fillMaxWidth().animateContentSize().clickable { 
-                                expanded = !expanded 
-                                if (expanded) {
-                                    app.id.toIntOrNull()?.let { viewModel.fetchSkillGap(it) }
-                                }
-                            }, 
-                            shape = RoundedCornerShape(16.dp), 
-                            colors = CardDefaults.cardColors(SmartHireSurface), 
-                            border = BorderStroke(1.dp, SmartHireOutline)
-                        ) {
-                            Column(Modifier.padding(16.dp)) {
-                                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                                    Text(app.job_details?.title ?: "Job #${app.job}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = SmartHireOnSurface, modifier = Modifier.weight(1f))
-                                    val statusColor = when (app.effectiveStatus) { "rejected" -> Color(0xFFEF4444); "hired" -> SmartHireSuccess; "interview" -> SmartHirePrimary; else -> SmartHireOnSurfaceVariant }
-                                    Surface(color = statusColor.copy(0.15f), shape = RoundedCornerShape(8.dp)) { Text(text = app.effectiveStatus.uppercase(), color = statusColor, fontWeight = FontWeight.Bold, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) }
-                                }
-                                Text(app.job_details?.company ?: "", color = SmartHireOnSurfaceVariant, fontSize = 13.sp)
-                                if (app.effectiveMatchScore > 0) {
-                                    Text(text = "AI Match Score: ${app.effectiveMatchScore.toInt()}%", color = SmartHirePrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
-                                }
-                                
-                                AnimatedVisibility(expanded) {
-                                    Column(Modifier.padding(top = 16.dp)) {
-                                        HorizontalDivider(color = SmartHireOutline, thickness = 1.dp)
-                                        Spacer(Modifier.height(12.dp))
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.AutoAwesome, "AI", tint = SmartHirePrimary, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(6.dp))
-                                            Text("AI Skill Gap Analysis & Advice", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = SmartHirePrimary)
-                                        }
-                                        Spacer(Modifier.height(10.dp))
-                                        
-                                        when (val g = skillGapState) {
-                                            is SeekerUiState.Loading -> Box(Modifier.fillMaxWidth().height(80.dp), Alignment.Center) { CircularProgressIndicator(color = SmartHirePrimary) }
-                                            is SeekerUiState.Success -> {
-                                                val rep = g.data
-                                                val matched = rep["matched_skills"] as? List<*> ?: emptyList<Any>()
-                                                val missing = rep["missing_skills"] as? List<*> ?: emptyList<Any>()
-                                                val rec = rep["recommendation"] as? String ?: ""
-                                                
-                                                if (matched.isNotEmpty()) {
-                                                    Text("Matched Skills", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = SmartHireOnSurface)
-                                                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
-                                                        matched.forEach { sk -> 
-                                                            Surface(color = Color(0xFFDCFCE7), shape = RoundedCornerShape(6.dp), modifier = Modifier.padding(bottom = 4.dp)) { 
-                                                                Text(text = sk.toString(), color = Color(0xFF15803D), fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontWeight = FontWeight.Medium) 
-                                                            } 
-                                                        }
-                                                    }
-                                                    Spacer(Modifier.height(8.dp))
-                                                }
-                                                
-                                                if (missing.isNotEmpty()) {
-                                                    Text("Missing Skills", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = SmartHireOnSurface)
-                                                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
-                                                        missing.forEach { sk -> 
-                                                            Surface(color = Color(0xFFFEE2E2), shape = RoundedCornerShape(6.dp), modifier = Modifier.padding(bottom = 4.dp)) { 
-                                                                Text(text = sk.toString(), color = Color(0xFFB91C1C), fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontWeight = FontWeight.Medium) 
-                                                            } 
-                                                        }
-                                                    }
-                                                    Spacer(Modifier.height(8.dp))
-                                                }
-                                                
-                                                if (rec.isNotEmpty()) {
-                                                    Surface(color = SmartHireSurfaceContainer, shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                                        Text(rec, fontSize = 12.sp, color = SmartHireOnSurface, modifier = Modifier.padding(10.dp), lineHeight = 16.sp)
-                                                    }
-                                                    Spacer(Modifier.height(12.dp))
-                                                }
-                                            }
-                                            else -> {
-                                                // Fallback list from app object
-                                                if (app.skill_gap_analysis.isNotEmpty()) {
-                                                    Text("Missing Skills", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = SmartHireOnSurface)
-                                                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
-                                                        app.skill_gap_analysis.forEach { sk ->
-                                                            Surface(color = Color(0xFFFEE2E2), shape = RoundedCornerShape(6.dp), modifier = Modifier.padding(bottom = 4.dp)) {
-                                                                Text(text = sk, color = Color(0xFFB91C1C), fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                                            }
-                                                        }
-                                                    }
-                                                    Spacer(Modifier.height(12.dp))
-                                                }
-                                            }
-                                        }
-                                        
-                                        OutlinedButton(onClick = { navController.navigate("chat/${app.id}") }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = SmartHirePrimary)) { 
-                                            Icon(Icons.Default.ChatBubble, null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(6.dp))
-                                            Text("Open Chat") 
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    item { Spacer(Modifier.height(80.dp)) }
-                }
-            }
-            else -> {}
-        }
-    }
+    AppliedTrackingScreen(viewModel, navController)
 }
 
 // ══════════════════ PROFILE TAB ══════════════════
@@ -493,53 +451,63 @@ fun AppliedTab(viewModel: SeekerViewModel, navController: NavHostController) {
 @Composable
 fun ProfileTab(viewModel: SeekerViewModel, navController: NavHostController) {
     val profileState by viewModel.profileState.collectAsState()
-    val cvState by viewModel.cvSyncState.collectAsState()
-    
     LaunchedEffect(Unit) { viewModel.getProfile() }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("Your Profile", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
-        Spacer(Modifier.height(16.dp))
-        if (cvState is SeekerUiState.Loading) { 
-            Text("Uploading and parsing CV with AI...", color = SmartHirePrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
-            LinearProgressIndicator(Modifier.fillMaxWidth(), color = SmartHirePrimary) 
-        } else if (cvState is SeekerUiState.Success) {
-            Text("CV uploaded and parsed successfully!", color = SmartHireSuccess, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
-        }
-        Spacer(Modifier.height(16.dp))
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(top = 16.dp)) {
+        Text("Your Profile", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PremiumText)
+        Spacer(Modifier.height(24.dp))
+        
         when (val s = profileState) {
             is SeekerUiState.Success -> {
                 val p = s.data.profile
                 if (p != null) {
-                    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(SmartHireSurface), border = BorderStroke(1.dp, SmartHireOutline)) {
-                        Column(Modifier.padding(20.dp)) {
-                            Text(s.data.full_name ?: s.data.username ?: "User", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
-                            if (!p.bio.isNullOrEmpty()) Text(p.bio, color = SmartHireOnSurfaceVariant, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
-                            Spacer(Modifier.height(12.dp))
-                            Row { Text("Degree: ", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = SmartHireOnSurface); Text(p.degree_extracted ?: p.degree ?: "N/A", fontSize = 13.sp, color = SmartHireOnSurfaceVariant) }
-                            Row { Text("Experience: ", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = SmartHireOnSurface); Text("${p.total_experience} years", fontSize = 13.sp, color = SmartHireOnSurfaceVariant) }
-                            Row { Text("Location: ", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = SmartHireOnSurface); Text(p.location ?: "N/A", fontSize = 13.sp, color = SmartHireOnSurfaceVariant) }
-                            if (!p.extracted_skills_json.isNullOrEmpty()) {
-                                Spacer(Modifier.height(12.dp)); Text("Skills", fontWeight = FontWeight.Bold, color = SmartHirePrimary, fontSize = 12.sp)
-                                Spacer(Modifier.height(4.dp))
-                                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    p.extracted_skills_json.forEach { sk -> Surface(color = SmartHirePrimary.copy(0.1f), shape = RoundedCornerShape(6.dp), modifier = Modifier.padding(bottom = 4.dp)) { Text(text = sk, color = SmartHirePrimary, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) } }
+                    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(PremiumSurface), border = BorderStroke(1.dp, Color.White.copy(alpha=0.05f))) {
+                        Column(Modifier.padding(24.dp)) {
+                            Box(Modifier.size(80.dp).clip(CircleShape).background(PremiumSurfaceContainer), Alignment.Center) { Icon(Icons.Default.Person, null, tint = PremiumTextMuted, modifier = Modifier.size(40.dp)) }
+                            Spacer(Modifier.height(16.dp))
+                            Text(s.data.full_name ?: s.data.username ?: "User", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PremiumText)
+                            if (!p.bio.isNullOrEmpty()) Text(p.bio, color = PremiumTextMuted, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
+                            Spacer(Modifier.height(24.dp))
+                            
+                            // Info Grid
+                            Row(Modifier.fillMaxWidth()) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("Experience", color = PremiumTextMuted, fontSize = 12.sp)
+                                    Text("${p.total_experience} years", color = PremiumText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text("Location", color = PremiumTextMuted, fontSize = 12.sp)
+                                    Text(p.location ?: "N/A", color = PremiumText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                                 }
                             }
-                            Spacer(Modifier.height(8.dp))
-                            ProfileStrengthCard(p.profile_completeness)
+                            
+                            if (!p.extracted_skills_json.isNullOrEmpty()) {
+                                Spacer(Modifier.height(24.dp))
+                                Text("Skills", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PremiumText)
+                                Spacer(Modifier.height(12.dp))
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    p.extracted_skills_json.forEach { skill -> SkillBadge(skill) }
+                                }
+                            }
                         }
                     }
                 }
             }
-            is SeekerUiState.Loading -> Box(Modifier.fillMaxWidth().height(100.dp), Alignment.Center) { CircularProgressIndicator(color = SmartHirePrimary) }
+            is SeekerUiState.Loading -> Box(Modifier.fillMaxWidth().height(200.dp), Alignment.Center) { CircularProgressIndicator(color = PremiumPrimary) }
             else -> {}
         }
-        Spacer(Modifier.height(24.dp))
-        Button(onClick = { viewModel.logout { navController.navigate("auth") { popUpTo(0) { inclusive = true } } } }, Modifier.fillMaxWidth().height(56.dp), colors = ButtonDefaults.buttonColors(Color(0xFFEF4444)), shape = RoundedCornerShape(16.dp)) {
-            Icon(Icons.AutoMirrored.Filled.ExitToApp, null, tint = Color.White); Spacer(Modifier.width(8.dp)); Text(text = "Log Out", color = Color.White, fontWeight = FontWeight.Bold)
+        
+        Spacer(Modifier.height(32.dp))
+        Button(
+            onClick = { viewModel.logout { navController.navigate("auth") { popUpTo(0) { inclusive = true } } } }, 
+            modifier = Modifier.fillMaxWidth().height(56.dp), 
+            colors = ButtonDefaults.buttonColors(PremiumSurface), 
+            border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f)),
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            Icon(Icons.AutoMirrored.Filled.ExitToApp, null, tint = Color(0xFFEF4444))
+            Spacer(Modifier.width(12.dp))
+            Text(text = "Log Out", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
         Spacer(Modifier.height(100.dp))
     }

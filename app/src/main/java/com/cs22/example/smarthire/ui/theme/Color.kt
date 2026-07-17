@@ -2,16 +2,16 @@ package com.cs22.example.smarthire.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// SmartHire Light Theme Colors (from HTML config)
-val SmartHirePrimary = Color(0xFF0EA5E9)
-val SmartHireSecondary = Color(0xFF0EA5E9)
-val SmartHireBackground = Color(0xFFFFFFFF)
-val SmartHireSurface = Color(0xFFFFFFFF)
-val SmartHireSurfaceContainer = Color(0xFFF0F7FF)
-val SmartHireOnSurface = Color(0xFF1E293B)
-val SmartHireOnSurfaceVariant = Color(0xFF64748B)
-val SmartHireOutline = Color(0xFFE0F2FE)
-val SmartHireError = Color(0xFFFFB4AB)
+// SmartHire Premium Dark Theme Colors
+val SmartHirePrimary = Color(0xFF3B82F6) // Vibrant Blue
+val SmartHireSecondary = Color(0xFF8B5CF6) // Vibrant Purple
+val SmartHireBackground = Color(0xFF0B0F19) // Deep Slate
+val SmartHireSurface = Color(0xFF111827) // Elevated Slate
+val SmartHireSurfaceContainer = Color(0xFF1F2937) // Lighter Slate
+val SmartHireOnSurface = Color(0xFFF3F4F6) // High contrast white
+val SmartHireOnSurfaceVariant = Color(0xFF9CA3AF) // Muted gray
+val SmartHireOutline = Color(0xFF374151) // Subtle border
+val SmartHireError = Color(0xFFEF4444)
 val SmartHireSuccess = Color(0xFF10B981)
 
 // Legacy Colors (keeping for compatibility if needed)

@@ -13,16 +13,18 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.cs22.example.smarthire.network.RetrofitClient
-import com.cs22.example.smarthire.ui.auth.SplashScreen
-import com.cs22.example.smarthire.ui.auth.AuthScreen
-import com.cs22.example.smarthire.ui.auth.RegisterScreen
-import com.cs22.example.smarthire.ui.auth.RoleSelectionScreen
+import com.cs22.example.smarthire.ui.auth.*
 import com.cs22.example.smarthire.ui.seeker.SeekerDashboard
+import com.cs22.example.smarthire.ui.seeker.JobDetailScreen
 import com.cs22.example.smarthire.ui.recruiter.RecruiterDashboard
 import com.cs22.example.smarthire.ui.components.ChatScreen
-import com.cs22.example.smarthire.ui.seeker.NotificationsScreen
-import com.cs22.example.smarthire.ui.auth.SeekerSetupScreen
-import com.cs22.example.smarthire.ui.auth.RecruiterSetupScreen
+import com.cs22.example.smarthire.ui.seeker.CvVaultScreen
+import com.cs22.example.smarthire.ui.seeker.SkillGapReportScreen
+import com.cs22.example.smarthire.ui.seeker.SettingsScreen
+import com.cs22.example.smarthire.ui.recruiter.JobPostingWizardScreen
+import com.cs22.example.smarthire.ui.recruiter.AnalyticsDashboardScreen
+import com.cs22.example.smarthire.ui.components.VideoCallScreen
+import com.cs22.example.smarthire.ui.components.NotificationScreen
 import com.cs22.example.smarthire.ui.theme.SmartHireTheme
 
 class MainActivity : ComponentActivity() {
@@ -42,12 +44,34 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(navController = navController, startDestination = "splash") {
                         composable("splash") {
-                            SplashScreen(onTimeout = {
-                                navController.navigate("auth") {
+                            SplashScreen(onSplashFinished = {
+                                navController.navigate("role_selection") {
                                     popUpTo("splash") { inclusive = true }
                                 }
                             })
                         }
+                        composable("role_selection") {
+                            RoleSelectionScreen(
+                                onJobSeekerSelected = {
+                                    navController.navigate("auth/seeker")
+                                },
+                                onRecruiterSelected = {
+                                    navController.navigate("auth/recruiter")
+                                }
+                            )
+                        }
+                        composable(
+                            route = "auth/{role}",
+                            arguments = listOf(navArgument("role") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val role = backStackEntry.arguments?.getString("role") ?: "seeker"
+                            AuthScreen(
+                                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                                navController = navController,
+                                preSelectedRole = role
+                            )
+                        }
+                        // Default auth fallback just in case
                         composable("auth") {
                             AuthScreen(
                                 viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
@@ -60,19 +84,11 @@ class MainActivity : ComponentActivity() {
                                 navController = navController
                             )
                         }
-                        composable("role_selection") {
-                            RoleSelectionScreen(
-                                onJobSeekerSelected = {
-                                    navController.navigate("job_seeker_flow") {
-                                        popUpTo("role_selection") { inclusive = true }
-                                    }
-                                },
-                                onRecruiterSelected = {
-                                    navController.navigate("recruiter_flow") {
-                                        popUpTo("role_selection") { inclusive = true }
-                                    }
-                                }
-                            )
+                        composable("seeker_setup") {
+                            SeekerSetupScreen(navController = navController)
+                        }
+                        composable("recruiter_setup") {
+                            RecruiterSetupScreen(navController = navController)
                         }
                         composable("job_seeker_flow") {
                             SeekerDashboard(
@@ -86,11 +102,16 @@ class MainActivity : ComponentActivity() {
                                 navController = navController
                             )
                         }
-                        composable("seeker_setup") {
-                            SeekerSetupScreen(navController = navController)
-                        }
-                        composable("recruiter_setup") {
-                            RecruiterSetupScreen(navController = navController)
+                        composable(
+                            route = "job_detail/{jobId}",
+                            arguments = listOf(navArgument("jobId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val jobId = backStackEntry.arguments?.getString("jobId") ?: return@composable
+                            JobDetailScreen(
+                                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                                navController = navController,
+                                jobId = jobId
+                            )
                         }
                         composable(
                             route = "chat/{applicationId}",
@@ -100,7 +121,29 @@ class MainActivity : ComponentActivity() {
                             ChatScreen(applicationId = appId)
                         }
                         composable("notifications") {
-                            NotificationsScreen()
+                            NotificationScreen(navController = navController)
+                        }
+                        composable("cv_vault") {
+                            CvVaultScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
+                        }
+                        composable(
+                            route = "skill_gap/{applicationId}",
+                            arguments = listOf(navArgument("applicationId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val appId = backStackEntry.arguments?.getString("applicationId") ?: return@composable
+                            SkillGapReportScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController, applicationId = appId)
+                        }
+                        composable("job_wizard") {
+                            JobPostingWizardScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
+                        }
+                        composable("analytics") {
+                            AnalyticsDashboardScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
+                        }
+                        composable("video_call") {
+                            VideoCallScreen(navController = navController)
+                        }
+                        composable("settings") {
+                            SettingsScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
                         }
                     }
                 }

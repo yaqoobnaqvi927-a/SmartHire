@@ -151,4 +151,38 @@ object JobRepository {
             emit(DashboardStats())
         }
     }
+
+    // ── Schedule Interview ────────────────────────────────────────────────
+    suspend fun scheduleInterview(
+        applicationId: Int,
+        date: String,
+        time: String,
+        notes: String
+    ): Result<InterviewResponse> = runCatching {
+        // e.g. "2026-07-20T14:00:00Z"
+        val scheduledAt = "${date}T${time}:00Z"
+        val request = InterviewRequest(
+            application = applicationId,
+            scheduled_at = scheduledAt,
+            duration_minutes = 60,
+            notes = notes
+        )
+        RetrofitClient.api.scheduleInterview(request)
+    }
+
+    // ── Get Skill Gap Analysis ────────────────────────────────────────────
+    suspend fun getSkillGap(applicationId: Int): Result<Map<String, Any>> = runCatching {
+        RetrofitClient.api.getSkillGap(applicationId)
+    }
+
+    // ── Get Match Score Preview ───────────────────────────────────────────
+    suspend fun getMatchScorePreview(jobId: Int): Result<Map<String, Any>> = runCatching {
+        RetrofitClient.api.getMatchScore(jobId)
+    }
+
+    // ── Get Recommended Jobs ──────────────────────────────────────────────
+    suspend fun getRecommendedJobs(): Result<List<DjangoJob>> = runCatching {
+        RetrofitClient.api.getRecommendedJobs()
+    }
+
 }

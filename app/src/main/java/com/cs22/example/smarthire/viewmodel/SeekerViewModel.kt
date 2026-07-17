@@ -10,6 +10,7 @@ import com.cs22.example.smarthire.model.*
 import com.cs22.example.smarthire.network.RetrofitClient
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 
 sealed class SeekerUiState<out T> {
     object Idle : SeekerUiState<Nothing>()
@@ -119,18 +120,25 @@ class SeekerViewModel : ViewModel() {
         }
     }
 
-    fun uploadCv(fileUri: Uri, fileName: String) {
+    fun uploadCv(fileUri: Uri, context: android.content.Context) {
         viewModelScope.launch {
             _cvSyncState.value = SeekerUiState.Loading
-            CvRepository.uploadCv(fileUri, fileName)
-                .onSuccess { 
-                    _cvSyncState.value = SeekerUiState.Success(Unit)
-                    getProfile() // Refresh profile after parsing
-                    fetchRecommendedJobs() // Refresh recommended jobs based on new skills
-                }
-                .onFailure { e ->
-                    _cvSyncState.value = SeekerUiState.Error(e.message ?: "Upload failed")
-                }
+            try {
+                val inputStream = context.contentResolver.openInputStream(fileUri)
+                val bytes = inputStream?.readBytes() ?: throw Exception("Cannot read file")
+                
+                // Use the new extension function instead of deprecated MediaType.parse
+                val mediaType = "application/pdf".toMediaTypeOrNull()
+                val requestBody = okhttp3.RequestBody.create(mediaType, bytes)
+                val part = okhttp3.MultipartBody.Part.createFormData("cvFile", "resume.pdf", requestBody)
+                
+                RetrofitClient.api.uploadCV(part)
+                _cvSyncState.value = SeekerUiState.Success(Unit)
+                getProfile() // Refresh profile after parsing
+                fetchRecommendedJobs() // Refresh recommended jobs based on new skills
+            } catch (e: Exception) {
+                _cvSyncState.value = SeekerUiState.Error(e.message ?: "Upload failed")
+            }
         }
     }
 

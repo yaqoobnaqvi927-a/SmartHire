@@ -134,4 +134,17 @@ class RecruiterViewModel : ViewModel() {
         com.cs22.example.smarthire.network.RetrofitClient.tokenManager.clear()
         onSuccess()
     }
+
+    fun scheduleInterview(applicationId: String, date: String, time: String, notes: String) {
+        viewModelScope.launch {
+            val appId = applicationId.toIntOrNull() ?: return@launch
+            JobRepository.scheduleInterview(appId, date, time, notes).onSuccess {
+                // If successful, update the application status to interview
+                updateApplicationStatus(applicationId, "interview")
+                fetchApplications() // Refresh applications list
+            }.onFailure {
+                // Ignore failure for now or update a state
+            }
+        }
+    }
 }

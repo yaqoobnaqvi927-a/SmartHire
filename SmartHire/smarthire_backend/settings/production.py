@@ -16,6 +16,19 @@ import os
 import dj_database_url
 from .base import *  # noqa: F401, F403
 
+# ── DRF Throttling (rate limiting) ────────────────────────────────────────────
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # inherit from base
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+    },
+}
+
 # ── Security hardening ────────────────────────────────────────────────────────
 DEBUG = False
 
@@ -61,6 +74,20 @@ else:
 
 # ── Static files — WhiteNoise with manifest hashing ──────────────────────────
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# ── AWS S3 — Media file storage (CVs, uploads) ───────────────────────────────
+_aws_key = os.environ.get('AWS_ACCESS_KEY_ID', '')
+if _aws_key:
+    INSTALLED_APPS += ['storages']  # noqa: F405
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_ACCESS_KEY_ID = _aws_key
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+    AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'smarthire-cvs')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'ap-south-1')
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = 'private'
+    AWS_QUERYSTRING_AUTH = True
+    AWS_QUERYSTRING_EXPIRE = 3600  # 1 hour signed URLs
 
 # ── Email — SMTP via env vars ─────────────────────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
