@@ -88,7 +88,7 @@ class ProfileSetupView(views.APIView):
                 if isinstance(skills, str):
                     profile.extracted_skills_json = [s.strip() for s in skills.split(',') if s.strip()]
                 elif isinstance(skills, list):
-                    profile.extracted_skills_json = skills
+                    profile.extracted_skills_json = [str(s) for s in skills]
             if 'bio' in request.data:
                 profile.bio = request.data['bio']
             if 'location' in request.data:

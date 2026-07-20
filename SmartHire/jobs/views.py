@@ -33,7 +33,10 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         skills = request.query_params.get('skills', '')
         job_type = request.query_params.get('type', '')
         location = request.query_params.get('location', '')
-        min_exp = int(request.query_params.get('experience', 0) or 0)
+        try:
+            min_exp = int(request.query_params.get('experience', 0) or 0)
+        except ValueError:
+            min_exp = 0
         query = request.query_params.get('q', '')
         
         # Get candidate skills for personalized matching
@@ -154,7 +157,7 @@ class JobPostingViewSet(viewsets.ModelViewSet):
             return Response({'error': 'No candidate profile'}, status=status.HTTP_404_NOT_FOUND)
         
         profile = request.user.candidate_profile
-        candidate_skills = profile.extracted_skills_json if isinstance(profile.extracted_skills_json, list) else []
+        candidate_skills = [str(s) for s in profile.extracted_skills_json] if isinstance(profile.extracted_skills_json, list) else []
         
         if not candidate_skills:
             # Return newest job if no skills parsed yet
