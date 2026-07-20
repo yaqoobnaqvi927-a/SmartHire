@@ -93,6 +93,20 @@ class ProfileSetupView(views.APIView):
                 profile.bio = request.data['bio']
             if 'location' in request.data:
                 profile.location = request.data['location']
+            if 'certifications' in request.data:
+                certs = request.data['certifications']
+                if isinstance(certs, str):
+                    profile.certifications_json = [c.strip() for c in certs.split(',') if c.strip()]
+                elif isinstance(certs, list):
+                    profile.certifications_json = certs
+            if 'university' in request.data:
+                uni = request.data['university']
+                deg = request.data.get('degree', profile.degree_extracted)
+                if not profile.education_json:
+                    profile.education_json = [{"institution": uni, "degree": deg, "field": "", "year": ""}]
+                elif isinstance(profile.education_json, list) and len(profile.education_json) > 0:
+                    profile.education_json[0]['institution'] = uni
+                    profile.education_json[0]['degree'] = deg
             profile.save()
             return Response({'status': 'success', 'message': 'Profile configured successfully.'})
         elif user.role_type == 'recruiter':
