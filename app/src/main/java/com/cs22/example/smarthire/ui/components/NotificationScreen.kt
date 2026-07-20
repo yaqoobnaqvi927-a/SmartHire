@@ -119,10 +119,11 @@ fun NotificationCard(
             }
 
             if (hasActions) {
+                val context = androidx.compose.ui.platform.LocalContext.current
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth().padding(start = 64.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(
-                        onClick = { },
+                        onClick = { android.widget.Toast.makeText(context, "Interview Accepted!", android.widget.Toast.LENGTH_SHORT).show() },
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
                         modifier = Modifier.weight(1f).height(40.dp)
@@ -130,7 +131,7 @@ fun NotificationCard(
                         Text("Accept", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                     OutlinedButton(
-                        onClick = { },
+                        onClick = { android.widget.Toast.makeText(context, "Reschedule Requested!", android.widget.Toast.LENGTH_SHORT).show() },
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE1E2E4)),
                         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),

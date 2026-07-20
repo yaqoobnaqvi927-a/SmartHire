@@ -163,7 +163,7 @@ class AuthViewModel : ViewModel() {
                             }
                             registerFcmTokenOnBackend()
                         } catch (fallbackEx: Exception) {
-                            _uiState.update { it.copy(isLoading = false, error = "Firebase login succeeded, but Django backend sync failed: ${e.message}") }
+                            _uiState.update { it.copy(isLoading = false, error = "Firebase login succeeded, but Django backend sync failed: ${fallbackEx.message ?: e.message}") }
                         }
                     }
                 }

@@ -114,11 +114,12 @@ def search_jobs(queryset, query_text='', skills_filter='', job_type='',
         
         # Experience match
         exp_score = 1.0
-        if min_experience > 0 and job.min_experience > 0:
-            if min_experience >= job.min_experience:
+        job_min_exp = job.min_experience or 0
+        if min_experience > 0 and job_min_exp > 0:
+            if min_experience >= job_min_exp:
                 exp_score = 1.0
             else:
-                exp_score = min_experience / job.min_experience
+                exp_score = min_experience / job_min_exp
         
         # Recency
         recency = _recency_boost(job.created_at)
@@ -184,8 +185,9 @@ def search_candidates(queryset, query_skills='', min_experience=0, degree='',
         
         # Experience
         exp_score = 1.0
-        if min_experience > 0 and candidate.total_experience > 0:
-            exp_score = min(candidate.total_experience / max(min_experience, 1), 1.5) / 1.5
+        cand_total_exp = candidate.total_experience or 0
+        if min_experience > 0 and cand_total_exp > 0:
+            exp_score = min(cand_total_exp / max(min_experience, 1), 1.5) / 1.5
         
         # Profile completeness (normalized 0-1)
         completeness = (candidate.profile_completeness or 0) / 100.0

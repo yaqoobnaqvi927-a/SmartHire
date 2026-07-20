@@ -18,6 +18,10 @@ class CVViewSet(viewsets.ModelViewSet):
         return CV.objects.filter(user=self.request.user).order_by('-uploaded_at')
 
     def create(self, request, *args, **kwargs):
+        if request.user.role_type != 'student':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only students/candidates can upload CVs.")
+            
         file_obj = request.FILES.get('file')
         if not file_obj:
             return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
@@ -32,7 +36,10 @@ class CVViewSet(viewsets.ModelViewSet):
         is_authentic, auth_message = verify_cv_authenticity(text)
 
         # Step 3: Parse with Gemini AI (falls back to regex)
-        parsed = parse_cv_with_gemini(text)
+        try:
+            parsed = parse_cv_with_gemini(text)
+        except Exception as e:
+            return Response({'error': f'AI Parsing failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Step 4: Save CV record
         cv = CV.objects.create(

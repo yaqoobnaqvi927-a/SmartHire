@@ -51,7 +51,6 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         data = UserSerializer(user).data
         if user.role_type == 'student' and hasattr(user, 'candidate_profile'):
             profile = user.candidate_profile
-            # Increment view count (basic analytics)
             data['profile'] = CandidateProfileSerializer(profile).data
         elif user.role_type == 'recruiter' and hasattr(user, 'recruiter_profile'):
             data['profile'] = RecruiterProfileSerializer(user.recruiter_profile).data
@@ -112,10 +111,18 @@ class SearchCandidatesView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        queryset = CandidateProfile.objects.all()
+        from rest_framework.exceptions import PermissionDenied
+        if request.user.role_type != 'recruiter':
+            raise PermissionDenied("Only recruiters can search candidates.")
+
+        queryset = CandidateProfile.objects.all().select_related('user')
         
         skills = request.query_params.get('skills', '')
-        experience = int(request.query_params.get('experience', 0) or 0)
+        try:
+            experience = int(request.query_params.get('experience', 0) or 0)
+        except ValueError:
+            experience = 0
+            
         degree = request.query_params.get('degree', '')
         
         # Use the search engine

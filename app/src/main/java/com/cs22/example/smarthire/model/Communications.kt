@@ -23,11 +23,11 @@ data class ChatThreadResponse(
 
 data class Notification(
     val id: String = "",
-    val title: String,
-    val message: String,
-    val action_url: String,
-    val is_read: Boolean,
-    val timestamp: String
+    val title: String = "",
+    val message: String = "",
+    val action_url: String? = null,
+    val is_read: Boolean = false,
+    val timestamp: String = ""
 )
 
 data class SendMessageRequest(

@@ -36,6 +36,10 @@ class InterviewViewSet(viewsets.ModelViewSet):
         """Schedule an interview with automatic Zoom meeting creation and calendar invite."""
         if not hasattr(self.request.user, 'recruiter_profile'):
             raise permissions.exceptions.PermissionDenied('Only recruiters can schedule interviews.')
+            
+        application = serializer.validated_data.get('application')
+        if application and application.job.recruiter != self.request.user.recruiter_profile:
+            raise permissions.exceptions.PermissionDenied('You can only schedule interviews for your own job postings.')
 
         interview = serializer.save()
         self._setup_meeting_and_notify(interview)
@@ -52,12 +56,16 @@ class InterviewViewSet(viewsets.ModelViewSet):
         job_title = application.job.title
 
         # --- Zoom Meeting ---
-        zoom_data = create_zoom_meeting(
-            topic=f'SmartHire Interview — {job_title}',
-            start_time=interview.scheduled_at,
-            duration_minutes=interview.duration_minutes,
-            agenda=f'Interview for {job_title} position via SmartHire platform.',
-        )
+        zoom_data = None
+        try:
+            zoom_data = create_zoom_meeting(
+                topic=f'SmartHire Interview — {job_title}',
+                start_time=interview.scheduled_at,
+                duration_minutes=interview.duration_minutes,
+                agenda=f'Interview for {job_title} position via SmartHire platform.',
+            )
+        except Exception as e:
+            print(f"Zoom API error: {e}")
 
         if zoom_data:
             interview.zoom_meeting_id = zoom_data['meeting_id']
@@ -67,7 +75,11 @@ class InterviewViewSet(viewsets.ModelViewSet):
             interview.save(update_fields=['zoom_meeting_id', 'meeting_link', 'zoom_host_url', 'zoom_password'])
 
         # --- Google Calendar Event ---
-        event_id = create_calendar_event(interview, zoom_join_url=interview.meeting_link)
+        event_id = None
+        try:
+            event_id = create_calendar_event(interview, zoom_join_url=interview.meeting_link)
+        except Exception as e:
+            print(f"Calendar API error: {e}")
         if event_id:
             interview.google_calendar_event_id = event_id
             interview.save(update_fields=['google_calendar_event_id'])

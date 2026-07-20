@@ -55,6 +55,10 @@ class SeekerViewModel : ViewModel() {
     private val _matchScoreState = MutableStateFlow<SeekerUiState<Map<String, Any>>>(SeekerUiState.Idle)
     val matchScoreState = _matchScoreState.asStateFlow()
 
+    private val _actionErrorState = MutableStateFlow<String?>(null)
+    val actionErrorState = _actionErrorState.asStateFlow()
+    fun clearActionError() { _actionErrorState.value = null }
+
     init {
         observeJobs()
         observeApplications()
@@ -110,7 +114,8 @@ class SeekerViewModel : ViewModel() {
             val skillsList = skills.split(",").map { it.trim() }.filter { it.isNotEmpty() }
             val minExpInt = minExperience.toIntOrNull() ?: 0
             
-            JobRepository.searchJobsWithAlgorithm(skills, skillsList, minExpInt, location)
+            // Fix: pass empty string for raw query 'q' to avoid redundant text search
+            JobRepository.searchJobsWithAlgorithm("", skillsList, minExpInt, location)
                 .onSuccess { results ->
                     _jobsState.value = SeekerUiState.Success(results)
                 }
@@ -125,7 +130,7 @@ class SeekerViewModel : ViewModel() {
             _cvSyncState.value = SeekerUiState.Loading
             try {
                 val inputStream = context.contentResolver.openInputStream(fileUri)
-                val bytes = inputStream?.readBytes() ?: throw Exception("Cannot read file")
+                val bytes = inputStream?.use { it.readBytes() } ?: throw Exception("Cannot read file")
                 
                 // Use the new extension function instead of deprecated MediaType.parse
                 val mediaType = "application/pdf".toMediaTypeOrNull()
@@ -198,7 +203,7 @@ class SeekerViewModel : ViewModel() {
                 RetrofitClient.api.cancelInterview(interviewId)
                 observeInterviews() // Refresh the interviews list
             } catch (e: Exception) {
-                // Fail silently or handle if necessary
+                _actionErrorState.value = e.message ?: "Failed to cancel interview"
             }
         }
     }
@@ -209,7 +214,7 @@ class SeekerViewModel : ViewModel() {
                 RetrofitClient.api.completeInterview(interviewId)
                 observeInterviews() // Refresh the interviews list
             } catch (e: Exception) {
-                // Fail silently or handle if necessary
+                _actionErrorState.value = e.message ?: "Failed to complete interview"
             }
         }
     }
@@ -218,12 +223,16 @@ class SeekerViewModel : ViewModel() {
         observeApplications()
     }
 
-    fun applyForJob(jobId: String, onComplete: (String) -> Unit) {
+    fun applyForJob(jobId: String, onComplete: (String?) -> Unit) {
         viewModelScope.launch {
             JobRepository.applyToJob(jobId)
                 .onSuccess { appId -> 
                     onComplete(appId)
                     observeApplications() // Refresh applications
+                }
+                .onFailure {
+                    onComplete(null)
+                    _actionErrorState.value = it.message ?: "Failed to apply"
                 }
         }
     }

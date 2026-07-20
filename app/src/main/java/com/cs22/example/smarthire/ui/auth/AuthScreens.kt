@@ -285,7 +285,7 @@ fun AuthScreen(viewModel: AuthViewModel, navController: NavHostController, preSe
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFADC6FF),
-                        modifier = Modifier.clickable { navController.navigate("register") }
+                        modifier = Modifier.clickable { navController.navigate("register/$preSelectedRole") }
                     )
                 }
             }
@@ -295,13 +295,13 @@ fun AuthScreen(viewModel: AuthViewModel, navController: NavHostController, preSe
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(viewModel: AuthViewModel, navController: NavHostController) {
+fun RegisterScreen(viewModel: AuthViewModel, navController: NavHostController, preSelectedRole: String = "student") {
     // Reusing the same stunning design for Registration
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var selectedRole by remember { mutableStateOf("student") }
+    var selectedRole by remember { mutableStateOf(preSelectedRole) }
 
     val authState by viewModel.uiState.collectAsState()
     val isRegistering = authState.isLoading

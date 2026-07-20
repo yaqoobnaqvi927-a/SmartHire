@@ -19,6 +19,14 @@ class CommunicationViewSet(viewsets.ViewSet):
         except Application.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
             
+        user = request.user
+        is_candidate = hasattr(user, 'candidate_profile') and application.candidate == user.candidate_profile
+        is_recruiter = hasattr(user, 'recruiter_profile') and application.job.recruiter == user.recruiter_profile
+        
+        if not (is_candidate or is_recruiter):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You are not a participant in this application.")
+            
         # Get or create Thread
         thread, _ = ChatThread.objects.get_or_create(
             job=application.job,
@@ -45,6 +53,14 @@ class CommunicationViewSet(viewsets.ViewSet):
             thread = ChatThread.objects.get(id=thread_id)
         except ChatThread.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+            
+        user = request.user
+        is_candidate = hasattr(user, 'candidate_profile') and thread.candidate == user.candidate_profile
+        is_recruiter = hasattr(user, 'recruiter_profile') and thread.recruiter == user.recruiter_profile
+        
+        if not (is_candidate or is_recruiter):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You are not a participant in this thread.")
             
         msg = ChatMessage.objects.create(
             thread=thread,

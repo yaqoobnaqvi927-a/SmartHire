@@ -64,17 +64,21 @@ def recruiter_user(db):
 
 
 @pytest.fixture
-def auth_candidate(api_client, candidate_user):
+def auth_candidate(candidate_user):
     """Return an APIClient force-authenticated as the candidate user."""
-    api_client.force_authenticate(user=candidate_user)
-    return api_client
+    from rest_framework.test import APIClient
+    client = APIClient()
+    client.force_authenticate(user=candidate_user)
+    return client
 
 
 @pytest.fixture
-def auth_recruiter(api_client, recruiter_user):
+def auth_recruiter(recruiter_user):
     """Return an APIClient force-authenticated as the recruiter user."""
-    api_client.force_authenticate(user=recruiter_user)
-    return api_client
+    from rest_framework.test import APIClient
+    client = APIClient()
+    client.force_authenticate(user=recruiter_user)
+    return client
 
 
 @pytest.fixture

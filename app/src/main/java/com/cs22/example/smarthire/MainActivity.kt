@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val navController = rememberNavController()
+            val authViewModel: com.cs22.example.smarthire.viewmodel.AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
             SmartHireTheme {
                 Surface(
@@ -44,11 +45,10 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(navController = navController, startDestination = "splash") {
                         composable("splash") {
-                            SplashScreen(onSplashFinished = {
-                                navController.navigate("role_selection") {
-                                    popUpTo("splash") { inclusive = true }
-                                }
-                            })
+                            SplashScreen(
+                                viewModel = authViewModel,
+                                navController = navController
+                            )
                         }
                         composable("role_selection") {
                             RoleSelectionScreen(
@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val role = backStackEntry.arguments?.getString("role") ?: "seeker"
                             AuthScreen(
-                                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                                viewModel = authViewModel,
                                 navController = navController,
                                 preSelectedRole = role
                             )
@@ -74,14 +74,19 @@ class MainActivity : ComponentActivity() {
                         // Default auth fallback just in case
                         composable("auth") {
                             AuthScreen(
-                                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                                viewModel = authViewModel,
                                 navController = navController
                             )
                         }
-                        composable("register") {
+                        composable(
+                            route = "register/{role}",
+                            arguments = listOf(navArgument("role") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val role = backStackEntry.arguments?.getString("role") ?: "student"
                             RegisterScreen(
-                                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                                navController = navController
+                                viewModel = authViewModel,
+                                navController = navController,
+                                preSelectedRole = role
                             )
                         }
                         composable("seeker_setup") {

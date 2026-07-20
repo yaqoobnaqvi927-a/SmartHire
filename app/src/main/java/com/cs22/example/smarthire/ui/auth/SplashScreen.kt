@@ -20,9 +20,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
+import androidx.navigation.NavHostController
+import com.cs22.example.smarthire.viewmodel.AuthViewModel
+
 @Composable
 fun SplashScreen(
-    onSplashFinished: () -> Unit
+    viewModel: AuthViewModel,
+    navController: NavHostController
 ) {
     // Pulse animation for text glow
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -45,9 +49,25 @@ fun SplashScreen(
         ), label = "lineOffset"
     )
 
-    LaunchedEffect(Unit) {
+    val authState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(authState.isLoggedIn, authState.userRole) {
         delay(2500) // Show splash for 2.5 seconds
-        onSplashFinished()
+        if (authState.isLoggedIn && authState.userRole != null) {
+            val role = authState.userRole
+            val setupComplete = authState.setupComplete
+            if (role == "recruiter") {
+                if (setupComplete) navController.navigate("recruiter_flow") { popUpTo("splash") { inclusive = true } }
+                else navController.navigate("recruiter_setup") { popUpTo("splash") { inclusive = true } }
+            } else {
+                if (setupComplete) navController.navigate("job_seeker_flow") { popUpTo("splash") { inclusive = true } }
+                else navController.navigate("seeker_setup") { popUpTo("splash") { inclusive = true } }
+            }
+        } else if (!authState.isLoading) {
+            navController.navigate("role_selection") {
+                popUpTo("splash") { inclusive = true }
+            }
+        }
     }
 
     Box(

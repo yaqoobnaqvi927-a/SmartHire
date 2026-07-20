@@ -32,6 +32,10 @@ class RecruiterViewModel : ViewModel() {
     private val _applicationsState = MutableStateFlow<RecruiterUiState<List<Application>>>(RecruiterUiState.Idle)
     val applicationsState = _applicationsState.asStateFlow()
 
+    private val _actionErrorState = MutableStateFlow<String?>(null)
+    val actionErrorState = _actionErrorState.asStateFlow()
+    fun clearActionError() { _actionErrorState.value = null }
+
     init {
         observeMyPostings()
         observeStats()
@@ -115,7 +119,11 @@ class RecruiterViewModel : ViewModel() {
 
     fun updateApplicationStatus(appId: String, status: String) {
         viewModelScope.launch {
-            JobRepository.updateApplicationStatus(appId, status)
+            try {
+                JobRepository.updateApplicationStatus(appId, status)
+            } catch(e: Exception) {
+                _actionErrorState.value = e.message ?: "Failed to update status"
+            }
         }
     }
 
@@ -142,8 +150,8 @@ class RecruiterViewModel : ViewModel() {
                 // If successful, update the application status to interview
                 updateApplicationStatus(applicationId, "interview")
                 fetchApplications() // Refresh applications list
-            }.onFailure {
-                // Ignore failure for now or update a state
+            }.onFailure { e ->
+                _actionErrorState.value = e.message ?: "Failed to schedule interview"
             }
         }
     }

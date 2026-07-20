@@ -139,7 +139,9 @@ data class ProfileResponse(
     val degree: String? = null,
     val expected_graduation: String? = null,
     val skills: String? = null,
-    val company_name: String? = null
+    val company_name: String? = null,
+    val company_size: String? = null,
+    val industry: String? = null
 )
 
 // ═══════════════════════════════════════════════════

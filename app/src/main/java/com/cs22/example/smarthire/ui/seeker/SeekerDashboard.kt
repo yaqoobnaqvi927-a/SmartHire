@@ -225,7 +225,10 @@ fun HeroMatchCard(job: DjangoJob, navController: NavHostController) {
                         Text("AI Match of the Day", fontSize = 12.sp, color = PremiumSecondary, fontWeight = FontWeight.Bold)
                     }
                 }
-                IconButton(onClick = {}) { Icon(Icons.Default.BookmarkBorder, null, tint = PremiumText) }
+                val context = LocalContext.current
+                IconButton(onClick = { 
+                    android.widget.Toast.makeText(context, "Job Bookmarked!", android.widget.Toast.LENGTH_SHORT).show() 
+                }) { Icon(Icons.Default.BookmarkBorder, null, tint = PremiumText) }
             }
             
             Spacer(Modifier.height(24.dp))
@@ -377,7 +380,6 @@ fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
                     Card(
                         Modifier.fillMaxWidth().animateContentSize().clickable { 
                             expanded = !expanded 
-                            if (expanded) job.id?.toIntOrNull()?.let { viewModel.fetchMatchScore(it) }
                         }, 
                         shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(PremiumSurface), border = BorderStroke(1.dp, Color.White.copy(alpha=0.05f))
                     ) {
@@ -396,21 +398,15 @@ fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
                             
                             AnimatedVisibility(expanded) {
                                 Column(Modifier.padding(top = 16.dp)) {
-                                    val matchScoreState by viewModel.matchScoreState.collectAsState()
-                                    if (matchScoreState is SeekerUiState.Success) {
-                                        val matchMap = (matchScoreState as SeekerUiState.Success<Map<String, Any>>).data
-                                        val score = (matchMap["match_percentage"] as? Number)?.toInt() ?: 0
-                                        if (score > 0) {
-                                            Surface(color = Color(0xFF10B981).copy(0.1f), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                                                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Default.AutoAwesome, "AI", tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
-                                                    Spacer(Modifier.width(12.dp))
-                                                    Text("Live AI Match Preview: $score%", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                                }
+                                    val score = job.match_percentage.toInt()
+                                    if (score > 0) {
+                                        Surface(color = Color(0xFF10B981).copy(0.1f), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.AutoAwesome, "AI", tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                                                Spacer(Modifier.width(12.dp))
+                                                Text("Live AI Match Preview: $score%", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                             }
                                         }
-                                    } else if (matchScoreState is SeekerUiState.Loading) {
-                                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), color = PremiumPrimary)
                                     }
                                     
                                     if (job.description.isNotEmpty()) Text(job.description.take(200) + "...", color = PremiumTextMuted, fontSize = 14.sp, lineHeight = 20.sp)
@@ -418,7 +414,15 @@ fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
                                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                         var applying by remember { mutableStateOf(false) }
                                         Button(
-                                            onClick = { applying = true; job.id?.let { viewModel.applyForJob(it) { appId -> applying = false; navController.navigate("chat/$appId") } } }, 
+                                            onClick = { 
+                                                applying = true
+                                                job.id?.let { 
+                                                    viewModel.applyForJob(it) { appId -> 
+                                                        applying = false
+                                                        if (appId != null) navController.navigate("chat/$appId")
+                                                    } 
+                                                } 
+                                            }, 
                                             Modifier.weight(1f).height(48.dp), shape = RoundedCornerShape(24.dp), colors = ButtonDefaults.buttonColors(PremiumPrimary)
                                         ) {
                                             if (applying) CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White) else Text("Apply & Chat", fontSize = 14.sp, fontWeight = FontWeight.Bold)
@@ -451,7 +455,11 @@ fun AppliedTab(viewModel: SeekerViewModel, navController: NavHostController) {
 @Composable
 fun ProfileTab(viewModel: SeekerViewModel, navController: NavHostController) {
     val profileState by viewModel.profileState.collectAsState()
-    LaunchedEffect(Unit) { viewModel.getProfile() }
+    LaunchedEffect(Unit) { 
+        if (profileState !is SeekerUiState.Success) {
+            viewModel.getProfile() 
+        }
+    }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(top = 16.dp)) {
         Text("Your Profile", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PremiumText)

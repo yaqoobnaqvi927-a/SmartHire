@@ -78,6 +78,24 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         company = serializer.validated_data.get('company', '') or recruiter.company_name
         serializer.save(recruiter=recruiter, company=company)
 
+    def update(self, request, *args, **kwargs):
+        job = self.get_object()
+        if not hasattr(request.user, 'recruiter_profile') or job.recruiter != request.user.recruiter_profile:
+            raise permissions.exceptions.PermissionDenied("You can only edit your own job postings.")
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        job = self.get_object()
+        if not hasattr(request.user, 'recruiter_profile') or job.recruiter != request.user.recruiter_profile:
+            raise permissions.exceptions.PermissionDenied("You can only edit your own job postings.")
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        job = self.get_object()
+        if not hasattr(request.user, 'recruiter_profile') or job.recruiter != request.user.recruiter_profile:
+            raise permissions.exceptions.PermissionDenied("You can only delete your own job postings.")
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=['get'])
     def generate_cover_letter(self, request, pk=None):
         """Generate AI cover letter for a specific job."""
@@ -88,7 +106,10 @@ class JobPostingViewSet(viewsets.ModelViewSet):
                           status=status.HTTP_403_FORBIDDEN)
         
         profile = request.user.candidate_profile
-        letter = generate_cover_letter_with_gemini(job, profile)
+        try:
+            letter = generate_cover_letter_with_gemini(job, profile)
+        except Exception as e:
+            return Response({'error': 'AI Generation failed. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'cover_letter': letter})
 
     @action(detail=True, methods=['patch'])
@@ -108,16 +129,20 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         if not hasattr(request.user, 'recruiter_profile'):
             return Response([], status=status.HTTP_200_OK)
         
+        from django.db.models import Count, Q
         jobs = JobPosting.objects.filter(
             recruiter=request.user.recruiter_profile
+        ).annotate(
+            applicant_count_annotated=Count('applications'),
+            ai_screened_count_annotated=Count('applications', filter=Q(applications__ai_match_score__gte=70))
         ).order_by('-created_at')
         
         data = []
         for job in jobs:
             serialized = JobPostingSerializer(job).data
             # Real-time counts
-            serialized['applicant_count'] = job.applications.count()
-            serialized['ai_screened_count'] = job.applications.filter(ai_match_score__gte=70).count()
+            serialized['applicant_count'] = job.applicant_count_annotated
+            serialized['ai_screened_count'] = job.ai_screened_count_annotated
             data.append(serialized)
         
         return Response(data)
@@ -225,8 +250,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             
             # Skill gap analysis
             from cv_bank.services import extract_skills_from_text
-            cand_set = set(s.lower() for s in candidate.extracted_skills_json) if isinstance(candidate.extracted_skills_json, list) else set()
-            job_set = set(s.lower() for s in job.required_skills_json) if isinstance(job.required_skills_json, list) else set()
+            cand_set = set(str(s).lower() for s in candidate.extracted_skills_json if s) if isinstance(candidate.extracted_skills_json, list) else set()
+            job_set = set(str(s).lower() for s in job.required_skills_json if s) if isinstance(job.required_skills_json, list) else set()
             skill_gaps = list(job_set - cand_set)
             
         serializer.save(candidate=candidate, ai_match_score=match_score, skill_gap_analysis=skill_gaps)
@@ -234,6 +259,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         """Allow status updates (ATS pipeline moves)."""
         instance = self.get_object()
+        
+        if not hasattr(request.user, 'recruiter_profile') or instance.job.recruiter != request.user.recruiter_profile:
+            raise permissions.exceptions.PermissionDenied("You can only update applications for your own job postings.")
+
         new_status = request.data.get('status') or request.data.get('ats_status')
         
         if new_status:
@@ -246,12 +275,14 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
 def analyze_skill_gap(candidate_skills, job_skills_required):
     """Compute missing skills."""
+    if not candidate_skills: candidate_skills = []
+    if not job_skills_required: job_skills_required = []
     if isinstance(candidate_skills, str):
-        candidate_skills = [s.strip().lower() for s in candidate_skills.split(',') if s.strip()]
+        candidate_skills = [s.strip().lower() for s in candidate_skills.split(',') if s and s.strip()]
     if isinstance(job_skills_required, str):
-        job_skills_required = [s.strip().lower() for s in job_skills_required.split(',') if s.strip()]
+        job_skills_required = [s.strip().lower() for s in job_skills_required.split(',') if s and s.strip()]
     if isinstance(candidate_skills, list):
-        candidate_skills = [s.lower() for s in candidate_skills]
+        candidate_skills = [str(s).lower() for s in candidate_skills if s]
     if isinstance(job_skills_required, list):
-        job_skills_required = [s.lower() for s in job_skills_required]
+        job_skills_required = [str(s).lower() for s in job_skills_required if s]
     return list(set(job_skills_required) - set(candidate_skills))

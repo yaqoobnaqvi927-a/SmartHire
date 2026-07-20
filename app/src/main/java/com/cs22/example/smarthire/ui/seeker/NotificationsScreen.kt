@@ -72,7 +72,7 @@ fun NotificationCard(notif: Notification) {
                 Text(notif.title, color = Color(0xFF0F172A), fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(notif.message, color = Color(0xFF64748B), style = MaterialTheme.typography.bodyMedium)
-                if (notif.action_url.contains("/interviews/")) {
+                if (notif.action_url?.contains("/interviews/") == true) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row {
                         Button(
