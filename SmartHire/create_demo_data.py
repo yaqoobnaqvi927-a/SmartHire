@@ -20,7 +20,6 @@ def create_demo_data():
         user=recruiter_user,
         defaults={
             'company_name': 'TechNova Solutions',
-            'position': 'Senior Tech Lead',
             'company_website': 'www.technova.com'
         }
     )
@@ -92,3 +91,4 @@ if __name__ == '__main__':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smarthire_backend.settings.production')
     django.setup()
     create_demo_data()
+
