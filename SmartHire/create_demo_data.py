@@ -16,7 +16,7 @@ def create_demo_data():
     recruiter_user.set_password('demo1234')
     recruiter_user.save()
     
-    RecruiterProfile.objects.get_or_create(
+    recruiter_profile, _ = RecruiterProfile.objects.get_or_create(
         user=recruiter_user,
         defaults={
             'company_name': 'TechNova Solutions',
@@ -72,7 +72,7 @@ def create_demo_data():
 
     for job_data in jobs:
         JobPosting.objects.get_or_create(
-            recruiter=recruiter_user,
+            recruiter=recruiter_profile,
             title=job_data['title'],
             defaults={
                 'company': job_data['company'],
@@ -91,4 +91,5 @@ if __name__ == '__main__':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smarthire_backend.settings.production')
     django.setup()
     create_demo_data()
+
 
