@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/interviews/', include('interviews.urls')),
     path('api/communications/', include('communications.urls')),
     path('api/ai/', include('ai_engine.urls')),
+    path('', include('smarthire_backend.demo_urls')),
 ]
 
 if settings.DEBUG:
