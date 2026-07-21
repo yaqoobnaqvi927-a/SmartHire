@@ -1,22 +1,17 @@
 import os
-import django
 import random
 from django.utils import timezone
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smarthire_backend.settings.production')
-django.setup()
-
-from django.contrib.auth import get_user_model
-from users.models import RecruiterProfile, CandidateProfile
-from jobs.models import JobPosting, Application
-
-User = get_user_model()
-
 def create_demo_data():
-    print("Clearing old demo data...")
+    from django.contrib.auth import get_user_model
+    from users.models import RecruiterProfile, CandidateProfile
+    from jobs.models import JobPosting, Application
+    User = get_user_model()
+    
+    print('Clearing old demo data...')
     JobPosting.objects.filter(title__contains='(Demo)').delete()
     
-    print("Creating Recruiter...")
+    print('Creating Recruiter...')
     recruiter_user, _ = User.objects.get_or_create(username='demo_recruiter', email='recruiter@demo.com', role_type='recruiter')
     recruiter_user.set_password('demo1234')
     recruiter_user.save()
@@ -30,7 +25,7 @@ def create_demo_data():
         }
     )
 
-    print("Creating Candidate...")
+    print('Creating Candidate...')
     student_user, _ = User.objects.get_or_create(username='demo_student', email='student@demo.com', role_type='student')
     student_user.set_password('demo1234')
     student_user.save()
@@ -45,7 +40,7 @@ def create_demo_data():
         }
     )
 
-    print("Creating highly detailed Job Postings...")
+    print('Creating highly detailed Job Postings...')
     jobs = [
         {
             'title': 'Senior Android Engineer (Demo)',
@@ -90,8 +85,10 @@ def create_demo_data():
                 'status': 'active'
             }
         )
-
-    print("Successfully populated realistic FYP Demo Data!")
+    print('Successfully populated realistic FYP Demo Data!')
 
 if __name__ == '__main__':
+    import django
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smarthire_backend.settings.production')
+    django.setup()
     create_demo_data()
