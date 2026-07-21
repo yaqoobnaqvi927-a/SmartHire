@@ -23,7 +23,7 @@ object AuthRepository {
         role: String  // "student" or "recruiter"
     ): Result<String> = runCatching {
         val result = auth.createUserWithEmailAndPassword(email, password).await()
-        val uid = result.user!!.uid
+        val uid = result.user?.uid ?: throw Exception("User not found")
 
         // Create user profile document in Firestore
         val userDoc = mapOf(
@@ -48,14 +48,14 @@ object AuthRepository {
     // ── Email / Password Login ─────────────────────────────────────────────
     suspend fun loginWithEmail(email: String, password: String): Result<String> = runCatching {
         val result = auth.signInWithEmailAndPassword(email, password).await()
-        result.user!!.uid
+        result.user?.uid ?: throw Exception("User not found")
     }
 
     // ── Google Sign-In ─────────────────────────────────────────────────────
     suspend fun loginWithGoogle(idToken: String, selectedRole: String): Result<Pair<String, Boolean>> = runCatching {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         val result = auth.signInWithCredential(credential).await()
-        val uid = result.user!!.uid
+        val uid = result.user?.uid ?: throw Exception("User not found")
         val isNewUser = result.additionalUserInfo?.isNewUser == true
 
         if (isNewUser) {
@@ -63,12 +63,12 @@ object AuthRepository {
             // Auto-create Firestore profile for new Google users
             val userDoc = mapOf(
                 "uid"            to uid,
-                "email"          to result.user!!.email,
-                "username"       to (result.user!!.displayName ?: "User"),
+                "email"          to (result.user?.email ?: ""),
+                "username"       to (result.user?.displayName ?: "User"),
                 "role"           to dbRole,
                 "created_at"     to com.google.firebase.Timestamp.now(),
                 "setup_complete" to false,
-                "photo_url"      to result.user!!.photoUrl?.toString()
+                "photo_url"      to result.user?.photoUrl?.toString()
             )
             db.collection(Collections.USERS).document(uid).set(userDoc).await()
 

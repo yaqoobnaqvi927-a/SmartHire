@@ -244,7 +244,7 @@ fun CandidateProfileScreen(
                     Text("Bio", color = PremiumText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = candidate.bio!!,
+                        text = candidate.bio ?: "",
                         color = PremiumTextMuted,
                         fontSize = 14.sp,
                         lineHeight = 20.sp
