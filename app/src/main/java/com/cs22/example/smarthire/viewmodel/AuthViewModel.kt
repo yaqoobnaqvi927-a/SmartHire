@@ -181,8 +181,7 @@ class AuthViewModel : ViewModel() {
             AuthRepository.loginWithGoogle(idToken, dbRole)
                 .onSuccess { (uid, isNew) ->
                     try {
-                        val data = if (isNew) null else AuthRepository.getUserData(uid)
-                        val role = if (isNew) dbRole else data?.get("role") as? String ?: dbRole
+                        val role = dbRole // Force the selected role for the demo presentation
                         
                         val googleReq = GoogleLoginRequest(id_token = idToken, role_type = role)
                         val authResponse = RetrofitClient.api.googleLogin(googleReq)

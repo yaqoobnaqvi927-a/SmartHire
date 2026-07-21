@@ -39,7 +39,8 @@ class CVViewSet(viewsets.ModelViewSet):
         try:
             parsed = parse_cv_with_gemini(text)
         except Exception as e:
-            return Response({'error': f'AI Parsing failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print(f"Parser exception: {e}")
+            parsed = {}
 
         # Step 4: Save CV record
         cv = CV.objects.create(

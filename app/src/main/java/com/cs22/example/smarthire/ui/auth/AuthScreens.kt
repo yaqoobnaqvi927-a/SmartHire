@@ -61,7 +61,7 @@ fun AuthScreen(viewModel: AuthViewModel, navController: NavHostController, preSe
                 val account = task.getResult(ApiException::class.java)
                 if (account?.idToken != null) {
                     val backendRole = if (preSelectedRole == "recruiter") "recruiter" else "student"
-                    viewModel.loginWithGoogle(account.idToken!!, backendRole)
+                    viewModel.loginWithGoogle(account.idToken ?: "", backendRole)
                 }
             } catch (e: ApiException) {
                 e.printStackTrace()
@@ -76,10 +76,10 @@ fun AuthScreen(viewModel: AuthViewModel, navController: NavHostController, preSe
             
             if (role == "recruiter") {
                 if (setupComplete) navController.navigate("recruiter_flow") { popUpTo("auth") { inclusive = true } }
-                else navController.navigate("recruiter_setup") { popUpTo("auth") { inclusive = true } }
+                else navController.navigate("profile_setup") { popUpTo("auth") { inclusive = true } }
             } else {
                 if (setupComplete) navController.navigate("job_seeker_flow") { popUpTo("auth") { inclusive = true } }
-                else navController.navigate("seeker_setup") { popUpTo("auth") { inclusive = true } }
+                else navController.navigate("profile_setup") { popUpTo("auth") { inclusive = true } }
             }
         }
     }
