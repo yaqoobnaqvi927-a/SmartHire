@@ -71,7 +71,7 @@ object JobRepository {
     // ── Apply to a job ────────────────────────────────────────────────────
     suspend fun applyToJob(jobId: String, coverLetter: String = ""): Result<String> = runCatching {
         // Django obtains student (candidate) profile from authenticated user session
-        val request = JobApplicationRequest(job = jobId.toInt())
+        val request = JobApplicationRequest(job = jobId.toInt(), cover_letter = coverLetter.takeIf { it.isNotBlank() })
         val response = RetrofitClient.api.submitApplication(request)
         response.id
     }

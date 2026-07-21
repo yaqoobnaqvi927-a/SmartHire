@@ -11,57 +11,70 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-
 import androidx.navigation.NavHostController
 import com.cs22.example.smarthire.viewmodel.AuthViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
     viewModel: AuthViewModel,
     navController: NavHostController
 ) {
-    // Pulse animation for text glow
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 1f,
+    val authState by viewModel.uiState.collectAsState()
+    val infiniteTransition = rememberInfiniteTransition()
+
+    // Pulse Animation for text
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.95f,
+        targetValue = 1.05f,
         animationSpec = infiniteRepeatable(
             animation = tween(1500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
-        ), label = "glowAlpha"
+        )
     )
 
-    // Moving line animation
-    val lineOffset by infiniteTransition.animateFloat(
-        initialValue = -1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ), label = "lineOffset"
+    // Logo Entrance Animation
+    var logoVisible by remember { mutableStateOf(false) }
+    val logoScale by animateFloatAsState(
+        targetValue = if (logoVisible) 1f else 0.5f,
+        animationSpec = tween(1000, easing = FastOutSlowInEasing)
+    )
+    val logoAlpha by animateFloatAsState(
+        targetValue = if (logoVisible) 1f else 0f,
+        animationSpec = tween(1000)
     )
 
-    val authState by viewModel.uiState.collectAsState()
+    // Progress Bar Animation
+    var progressFill by remember { mutableStateOf(0f) }
+    val animatedProgress by animateFloatAsState(
+        targetValue = progressFill,
+        animationSpec = tween(2000, easing = LinearEasing)
+    )
+
+    LaunchedEffect(Unit) {
+        logoVisible = true
+        progressFill = 1f
+    }
 
     LaunchedEffect(authState.isLoggedIn, authState.userRole) {
-        delay(2500) // Show splash for 2.5 seconds
+        delay(2500) // Premium 2.5 second delay
+        
         if (authState.isLoggedIn && authState.userRole != null) {
             val role = authState.userRole
             val setupComplete = authState.setupComplete
+            
             if (role == "recruiter") {
                 if (setupComplete) navController.navigate("recruiter_flow") { popUpTo("splash") { inclusive = true } }
-                else navController.navigate("recruiter_setup") { popUpTo("splash") { inclusive = true } }
+                else navController.navigate("profile_setup") { popUpTo("splash") { inclusive = true } }
             } else {
                 if (setupComplete) navController.navigate("job_seeker_flow") { popUpTo("splash") { inclusive = true } }
-                else navController.navigate("seeker_setup") { popUpTo("splash") { inclusive = true } }
+                else navController.navigate("profile_setup") { popUpTo("splash") { inclusive = true } }
             }
         } else if (!authState.isLoading) {
             navController.navigate("role_selection") {
@@ -73,7 +86,7 @@ fun SplashScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0B0F19)), // Background level 0
+            .background(Color(0xFF0B0F19)),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -82,61 +95,46 @@ fun SplashScreen(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(bottom = 32.dp)
+                modifier = Modifier
+                    .scale(logoScale)
+                    .padding(bottom = 48.dp)
             ) {
-                // Logo Icon
+                // Gradient Icon
                 Box(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6))
-                            )
-                        ),
+                        .background(Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6)))),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Work,
-                        contentDescription = "Logo",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
-                    )
+                    Icon(Icons.Default.Work, contentDescription = "Logo", tint = Color.White, modifier = Modifier.size(28.dp))
                 }
-
+                
                 Spacer(modifier = Modifier.width(16.dp))
-
-                // App Name with fake text shadow/glow via drawWithContent
+                
+                // Pulsing Text
                 Text(
                     text = "SmartHire",
-                    color = Color(0xFFADC6FF), // Primary color
-                    fontSize = 32.sp,
+                    color = Color(0xFFADC6FF).copy(alpha = logoAlpha),
+                    fontSize = 36.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.drawWithContent {
-                        drawContent() // Native text drawing (we can add complex shadow logic later if needed)
-                    }
+                    modifier = Modifier.scale(pulseScale)
                 )
             }
 
-            // Animated Loading Line
+            // Animated Progress Track
             Box(
                 modifier = Modifier
-                    .width(100.dp)
-                    .height(2.dp)
+                    .width(140.dp)
+                    .height(3.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(Color.DarkGray.copy(alpha = 0.3f))
+                    .background(Color.White.copy(alpha = 0.1f))
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .fillMaxWidth(0.5f)
-                        .offset(x = (lineOffset * 100).dp)
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(Color.Transparent, Color(0xFF3B82F6), Color.Transparent)
-                            )
-                        )
+                        .fillMaxWidth(animatedProgress)
+                        .background(Brush.horizontalGradient(listOf(Color(0xFF3B82F6), Color(0xFF8B5CF6))))
                 )
             }
         }

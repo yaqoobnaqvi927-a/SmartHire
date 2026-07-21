@@ -31,6 +31,10 @@ fun JobPostingWizardScreen(viewModel: RecruiterViewModel, navController: NavHost
     var jobTitle by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var salary by remember { mutableStateOf("") }
+    var skillsRequired by remember { mutableStateOf("") }
+    var yearsOfExperience by remember { mutableStateOf("") }
+    var jobType by remember { mutableStateOf("onsite") }
+    var jobTypeExpanded by remember { mutableStateOf(false) }
     var generatedDescription by remember { mutableStateOf("") }
     var isGenerating by remember { mutableStateOf(false) }
 
@@ -66,7 +70,9 @@ fun JobPostingWizardScreen(viewModel: RecruiterViewModel, navController: NavHost
                 } else {
                     Button(
                         onClick = { 
-                            viewModel.postJob(jobTitle, "My Company", generatedDescription, emptyList(), 0, "Bachelors", "remote", location, salary)
+                            val skillsList = skillsRequired.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                            val minExp = yearsOfExperience.toIntOrNull() ?: 0
+                            viewModel.postJob(jobTitle, "My Company", generatedDescription, skillsList, minExp, "Bachelors", jobType, location, salary)
                             navController.popBackStack()
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -127,6 +133,55 @@ fun JobPostingWizardScreen(viewModel: RecruiterViewModel, navController: NavHost
                             focusedTextColor = Color.White, unfocusedTextColor = Color.White
                         )
                     )
+                    OutlinedTextField(
+                        value = skillsRequired, onValueChange = { skillsRequired = it },
+                        label = { Text("Skills Required (comma separated)", color = Color(0xFFC2C6D6)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFF1D2433),
+                            focusedTextColor = Color.White, unfocusedTextColor = Color.White
+                        )
+                    )
+                    OutlinedTextField(
+                        value = yearsOfExperience, onValueChange = { yearsOfExperience = it },
+                        label = { Text("Years of Experience", color = Color(0xFFC2C6D6)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFF1D2433),
+                            focusedTextColor = Color.White, unfocusedTextColor = Color.White
+                        )
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = jobTypeExpanded,
+                        onExpandedChange = { jobTypeExpanded = !jobTypeExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = jobType,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Job Type", color = Color(0xFFC2C6D6)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = jobTypeExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFF1D2433),
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = jobTypeExpanded,
+                            onDismissRequest = { jobTypeExpanded = false }
+                        ) {
+                            listOf("remote", "hybrid", "onsite").forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption) },
+                                    onClick = {
+                                        jobType = selectionOption
+                                        jobTypeExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
 
                 if (step == 2) {

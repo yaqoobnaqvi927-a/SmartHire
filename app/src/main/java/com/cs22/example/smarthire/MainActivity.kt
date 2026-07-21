@@ -17,7 +17,11 @@ import com.cs22.example.smarthire.ui.auth.*
 import com.cs22.example.smarthire.ui.seeker.SeekerDashboard
 import com.cs22.example.smarthire.ui.seeker.JobDetailScreen
 import com.cs22.example.smarthire.ui.recruiter.RecruiterDashboard
+import com.cs22.example.smarthire.ui.recruiter.CandidateProfileScreen
 import com.cs22.example.smarthire.ui.components.ChatScreen
+import com.cs22.example.smarthire.ui.components.InterviewScheduleScreen
+import com.cs22.example.smarthire.ui.components.SeekerInterviewScreen
+import com.cs22.example.smarthire.ui.components.RecruiterInterviewScreen
 import com.cs22.example.smarthire.ui.seeker.CvVaultScreen
 import com.cs22.example.smarthire.ui.seeker.SkillGapReportScreen
 import com.cs22.example.smarthire.ui.seeker.SettingsScreen
@@ -44,6 +48,9 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     NavHost(navController = navController, startDestination = "splash") {
+                        composable("onboarding") {
+                            OnboardingScreen(navController = navController)
+                        }
                         composable("splash") {
                             SplashScreen(
                                 viewModel = authViewModel,
@@ -89,11 +96,11 @@ class MainActivity : ComponentActivity() {
                                 preSelectedRole = role
                             )
                         }
-                        composable("seeker_setup") {
-                            SeekerSetupScreen(navController = navController)
-                        }
-                        composable("recruiter_setup") {
-                            RecruiterSetupScreen(navController = navController)
+                        composable("profile_setup") {
+                            DynamicProfileSetupScreen(
+                                navController = navController,
+                                viewModel = authViewModel
+                            )
                         }
                         composable("job_seeker_flow") {
                             SeekerDashboard(
@@ -149,6 +156,29 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("settings") {
                             SettingsScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
+                        }
+                        composable(
+                            route = "candidate_profile/{applicationId}",
+                            arguments = listOf(navArgument("applicationId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val appId = backStackEntry.arguments?.getString("applicationId") ?: return@composable
+                            CandidateProfileScreen(
+                                applicationId = appId,
+                                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                                navController = navController
+                            )
+                        }
+                        composable("my_interviews") {
+                            SeekerInterviewScreen(
+                                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                                navController = navController
+                            )
+                        }
+                        composable("recruiter_interviews") {
+                            RecruiterInterviewScreen(
+                                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                                navController = navController
+                            )
                         }
                     }
                 }

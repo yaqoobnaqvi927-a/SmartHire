@@ -208,6 +208,36 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    // ── Profile Setup ──────────────────────────────────────────────────────
+    fun setupProfile(role: String, payload: Map<String, String>, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                // Call the Django setup endpoint
+                RetrofitClient.api.setupProfile(payload)
+                
+                // Update local state to prevent login loop
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false,
+                        setupComplete = true
+                    ) 
+                }
+                
+                // Also update Firestore if you still want Firebase sync
+                val uid = com.cs22.example.smarthire.firebase.FirebaseClient.uid
+                if (uid != null) {
+                    val db = com.cs22.example.smarthire.firebase.FirebaseClient.db
+                    db.collection("users").document(uid).update("setup_complete", true)
+                }
+                
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to complete setup") }
+            }
+        }
+    }
+
     // ── Logout ─────────────────────────────────────────────────────────────
     fun logout() {
         AuthRepository.logout()

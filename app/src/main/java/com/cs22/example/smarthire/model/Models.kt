@@ -168,7 +168,7 @@ data class JobApplicationResponse(
 
 typealias Application = JobApplicationResponse
 
-data class JobApplicationRequest(val job: Int, val student: Int? = null)
+data class JobApplicationRequest(val job: Int, val student: Int? = null, val cover_letter: String? = null)
 
 // ═══════════════════════════════════════════════════
 // INTERVIEW MODELS

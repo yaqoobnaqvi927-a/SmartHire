@@ -1,12 +1,14 @@
 package com.cs22.example.smarthire.ui.seeker
 
-import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,28 +28,206 @@ import com.cs22.example.smarthire.model.Application
 import com.cs22.example.smarthire.viewmodel.SeekerUiState
 import com.cs22.example.smarthire.viewmodel.SeekerViewModel
 
+enum class KanbanColumnType(val title: String, val color: Color) {
+    APPLIED("Applied", Color(0xFF3B82F6)),
+    SCREENING("Screening", Color(0xFFF59E0B)),
+    INTERVIEW("Interview", Color(0xFF8B5CF6)),
+    OFFER("Offer", Color(0xFF10B981)),
+    REJECTED("Rejected", Color(0xFFEF4444))
+}
+
+fun getKanbanColumnForStatus(status: String): KanbanColumnType {
+    return when (status.lowercase()) {
+        "applied", "pending", "new" -> KanbanColumnType.APPLIED
+        "reviewed", "screening" -> KanbanColumnType.SCREENING
+        "interview", "shortlisted" -> KanbanColumnType.INTERVIEW
+        "hired", "accepted", "offer" -> KanbanColumnType.OFFER
+        "rejected" -> KanbanColumnType.REJECTED
+        else -> KanbanColumnType.APPLIED
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppliedTrackingScreen(viewModel: SeekerViewModel, navController: NavHostController) {
     val state by viewModel.applicationsState.collectAsState()
     LaunchedEffect(Unit) { viewModel.getApplications() }
-    
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).padding(top = 16.dp)) {
-        Text("Application Status", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PremiumText)
-        Text("Track your active applications and interview stages.", fontSize = 14.sp, color = PremiumTextMuted, modifier = Modifier.padding(top = 8.dp, bottom = 24.dp))
+
+    if (state is SeekerUiState.Loading) {
+        Box(Modifier.fillMaxSize(), Alignment.Center) { 
+            CircularProgressIndicator(color = PremiumPrimary) 
+        }
+        return
+    }
+
+    val applications = if (state is SeekerUiState.Success) {
+        (state as SeekerUiState.Success).data
+    } else emptyList()
+
+    val columnsMap = KanbanColumnType.values().associateWith { col ->
+        applications.filter { app -> getKanbanColumnForStatus(app.effectiveStatus) == col }
+    }
+
+    Column(Modifier.fillMaxSize().padding(top = 16.dp)) {
+        Column(Modifier.padding(horizontal = 24.dp)) {
+            Text("Kanban Board", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PremiumText)
+            Text(
+                "Track your active applications and interview stages.", 
+                fontSize = 14.sp, 
+                color = PremiumTextMuted, 
+                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
+            )
+        }
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(KanbanColumnType.values()) { column ->
+                KanbanColumnView(
+                    column = column,
+                    applications = columnsMap[column] ?: emptyList(),
+                    navController = navController
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun KanbanColumnView(column: KanbanColumnType, applications: List<Application>, navController: NavHostController) {
+    Column(
+        modifier = Modifier
+            .width(280.dp)
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(16.dp))
+            .background(PremiumSurface)
+            .padding(16.dp)
+    ) {
+        // Header
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(column.color)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(column.title, color = PremiumText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(Modifier.weight(1f))
+            
+            // Pulsing badge
+            val infiniteTransition = rememberInfiniteTransition()
+            val alpha by infiniteTransition.animateFloat(
+                initialValue = 0.5f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1000),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "Badge Alpha Animation"
+            )
+            
+            Surface(
+                color = column.color.copy(alpha = 0.15f * alpha),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, column.color.copy(alpha = 0.5f * alpha))
+            ) {
+                Text(
+                    text = applications.size.toString(),
+                    color = column.color.copy(alpha = alpha.coerceAtLeast(0.7f)),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                )
+            }
+        }
         
-        when (val s = state) {
-            is SeekerUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = PremiumPrimary) }
-            is SeekerUiState.Error -> Text(s.message, color = Color.Red)
-            is SeekerUiState.Success -> {
-                if (s.data.isEmpty()) Box(Modifier.fillMaxSize(), Alignment.Center) { Text("No applications yet. Start searching!", color = PremiumTextMuted) }
-                else LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                    items(s.data) { app ->
-                        ApplicationPipelineCard(app, navController)
-                    }
-                    item { Spacer(Modifier.height(100.dp)) }
+        if (applications.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No applications here", color = PremiumTextMuted, fontSize = 14.sp)
+            }
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(applications, key = { it.id }) { app ->
+                    KanbanCard(
+                        app = app,
+                        columnColor = column.color,
+                        modifier = Modifier.animateItem(),
+                        navController = navController
+                    )
                 }
             }
-            else -> {}
+        }
+    }
+}
+
+@Composable
+fun KanbanCard(app: Application, columnColor: Color, modifier: Modifier = Modifier, navController: NavHostController) {
+    val companyName = app.job_details?.company ?: "Company"
+    val jobTitle = app.job_details?.title ?: "Job #${app.job}"
+    val initial = companyName.firstOrNull()?.uppercaseChar()?.toString() ?: "C"
+    
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { navController.navigate("chat/${app.id}") },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(PremiumSurfaceContainer),
+        border = BorderStroke(1.dp, Color.White.copy(alpha=0.05f))
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(columnColor.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(initial, color = columnColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(jobTitle, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PremiumText, maxLines = 1)
+                    Spacer(Modifier.height(4.dp))
+                    Text(companyName, color = PremiumTextMuted, fontSize = 12.sp, maxLines = 1)
+                }
+            }
+            
+            Spacer(Modifier.height(12.dp))
+            
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(app.applied_at ?: "Just now", color = PremiumTextMuted, fontSize = 10.sp)
+                
+                app.effectiveMatchScore?.let { score ->
+                    val scoreColor = when {
+                        score >= 80 -> Color(0xFF10B981)
+                        score >= 60 -> Color(0xFFF59E0B)
+                        else -> Color(0xFFEF4444)
+                    }
+                    Surface(
+                        color = scoreColor.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            "$score% Match",
+                            color = scoreColor,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
