@@ -3,7 +3,7 @@ import django
 import random
 from django.utils import timezone
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smarthire_core.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smarthire_backend.settings.production')
 django.setup()
 
 from django.contrib.auth import get_user_model
