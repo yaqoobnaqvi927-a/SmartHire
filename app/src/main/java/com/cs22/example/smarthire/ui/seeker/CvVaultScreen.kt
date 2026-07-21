@@ -33,6 +33,12 @@ fun CvVaultScreen(viewModel: SeekerViewModel, navController: NavHostController) 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { viewModel.uploadCv(it, context) }
     }
+    
+    val cvsState by viewModel.cvsState.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        viewModel.fetchCVs()
+    }
 
     Scaffold(
         topBar = {
@@ -73,14 +79,38 @@ fun CvVaultScreen(viewModel: SeekerViewModel, navController: NavHostController) 
                     Text("Manage your uploaded resumes to tailor your applications.", color = Color(0xFFC2C6D6), fontSize = 16.sp)
                     Spacer(Modifier.height(24.dp))
                 }
-                
-                // Example Active CV Card
-                item {
-                    CvCard(filename = "Software_Eng_Resume.pdf", date = "Today", isActive = true)
-                }
-                // Example Inactive CV Card
-                item {
-                    CvCard(filename = "Old_Resume_2024.pdf", date = "Jan 12, 2026", isActive = false)
+                when (val state = cvsState) {
+                    is com.cs22.example.smarthire.viewmodel.SeekerUiState.Loading -> {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Color(0xFF3B82F6))
+                            }
+                        }
+                    }
+                    is com.cs22.example.smarthire.viewmodel.SeekerUiState.Success -> {
+                        val cvs = state.data
+                        if (cvs.isEmpty()) {
+                            item {
+                                Text("No CVs uploaded yet. Tap the + button to add one.", color = Color(0xFFC2C6D6))
+                            }
+                        } else {
+                            items(cvs.size) { index ->
+                                val cv = cvs[index]
+                                CvCard(
+                                    filename = "Resume_${cv.id}.pdf",
+                                    date = "Parsed", 
+                                    isActive = index == 0,
+                                    onDelete = { viewModel.deleteCv(cv.id) }
+                                )
+                            }
+                        }
+                    }
+                    is com.cs22.example.smarthire.viewmodel.SeekerUiState.Error -> {
+                        item {
+                            Text("Error: ${state.message}", color = Color.Red)
+                        }
+                    }
+                    else -> {}
                 }
             }
         }
@@ -88,7 +118,7 @@ fun CvVaultScreen(viewModel: SeekerViewModel, navController: NavHostController) 
 }
 
 @Composable
-fun CvCard(filename: String, date: String, isActive: Boolean) {
+fun CvCard(filename: String, date: String, isActive: Boolean, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -118,8 +148,8 @@ fun CvCard(filename: String, date: String, isActive: Boolean) {
                 }
             }
             Spacer(Modifier.width(8.dp))
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color(0xFFC2C6D6))
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444))
             }
         }
     }

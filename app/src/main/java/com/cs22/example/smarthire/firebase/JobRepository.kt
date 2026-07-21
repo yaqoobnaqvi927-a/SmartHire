@@ -185,4 +185,66 @@ object JobRepository {
         RetrofitClient.api.getRecommendedJobs()
     }
 
+    // ── Update Job ────────────────────────────────────────────────────────
+    suspend fun updateJob(
+        jobId: String,
+        title: String,
+        company: String,
+        location: String,
+        locationType: String,
+        department: String,
+        description: String,
+        salaryRange: String,
+        skills: List<String>,
+        experienceLevel: String
+    ): Result<DjangoJob> = runCatching {
+        val jobMap = mapOf(
+            "title" to title,
+            "company" to company,
+            "location" to location,
+            "job_type" to locationType.lowercase(),
+            "description" to description,
+            "salary_range" to salaryRange,
+            "required_skills_json" to skills,
+            "min_experience" to (experienceLevel.toIntOrNull() ?: 0)
+        )
+        RetrofitClient.api.updateJob(jobId, jobMap)
+    }
+
+    // ── Delete Job ────────────────────────────────────────────────────────
+    suspend fun deleteJob(jobId: String): Result<Unit> = runCatching {
+        val response = RetrofitClient.api.deleteJob(jobId)
+        if (!response.isSuccessful) throw Exception("Failed to delete job")
+    }
+
+    // ── Withdraw Application ──────────────────────────────────────────────
+    suspend fun deleteApplication(appId: String): Result<Unit> = runCatching {
+        val response = RetrofitClient.api.deleteApplication(appId)
+        if (!response.isSuccessful) throw Exception("Failed to withdraw application")
+    }
+
+    // ── Reschedule Interview ──────────────────────────────────────────────
+    suspend fun updateInterview(
+        interviewId: String,
+        applicationId: Int,
+        date: String,
+        time: String,
+        notes: String
+    ): Result<InterviewResponse> = runCatching {
+        val scheduledAt = "${date}T${time}:00Z"
+        val request = InterviewRequest(
+            application = applicationId,
+            scheduled_at = scheduledAt,
+            duration_minutes = 60,
+            notes = notes
+        )
+        RetrofitClient.api.updateInterview(interviewId, request)
+    }
+
+    // ── Delete Interview ──────────────────────────────────────────────────
+    suspend fun deleteInterview(interviewId: String): Result<Unit> = runCatching {
+        val response = RetrofitClient.api.deleteInterview(interviewId)
+        if (!response.isSuccessful) throw Exception("Failed to delete interview")
+    }
+
 }

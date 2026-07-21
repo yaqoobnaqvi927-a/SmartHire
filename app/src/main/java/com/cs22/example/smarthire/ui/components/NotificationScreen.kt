@@ -94,7 +94,8 @@ fun NotificationCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     iconTint: Color,
     iconBg: Color,
-    hasActions: Boolean
+    hasActions: Boolean,
+    onMarkAsRead: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -111,7 +112,13 @@ fun NotificationCard(
                 Column(Modifier.weight(1f)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFE1E2E4))
-                        Text(time, fontSize = 12.sp, color = Color(0xFFC2C6D6))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(time, fontSize = 12.sp, color = Color(0xFFC2C6D6))
+                            Spacer(Modifier.width(8.dp))
+                            IconButton(onClick = onMarkAsRead, modifier = Modifier.size(20.dp)) {
+                                Icon(Icons.Default.Check, contentDescription = "Mark as read", tint = Color(0xFFC2C6D6))
+                            }
+                        }
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(description, fontSize = 14.sp, color = Color(0xFFC2C6D6), lineHeight = 20.sp)

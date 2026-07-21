@@ -168,18 +168,26 @@ fun RecruiterConsoleTab(viewModel: RecruiterViewModel) {
                                         Text(job.company, fontSize = 12.sp, color = SmartHireOnSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                                     }
                                     val isActive = job.status == "active"
-                                    Surface(
-                                        color = if (isActive) SmartHireSuccess.copy(0.12f) else Color(0xFFF59E0B).copy(0.12f),
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.clickable { job.id?.let { viewModel.toggleJobStatus(it) } }
-                                    ) {
-                                        Text(
-                                            text = if (isActive) "ACTIVE" else "PAUSED",
-                                            color = if (isActive) SmartHireSuccess else Color(0xFFF59E0B),
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 9.sp,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                        )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Surface(
+                                            color = if (isActive) SmartHireSuccess.copy(0.12f) else Color(0xFFF59E0B).copy(0.12f),
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier.clickable { job.id?.let { viewModel.toggleJobStatus(it) } }
+                                        ) {
+                                            Text(
+                                                text = if (isActive) "ACTIVE" else "PAUSED",
+                                                color = if (isActive) SmartHireSuccess else Color(0xFFF59E0B),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 9.sp,
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = { job.id?.let { viewModel.deleteJob(it) } },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(Icons.Default.DeleteOutline, contentDescription = "Delete Job", tint = Color(0xFFEF4444))
+                                        }
                                     }
                                 }
                                 Spacer(Modifier.height(16.dp))

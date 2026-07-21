@@ -62,6 +62,7 @@ data class ExtractedData(
 )
 
 data class ExtractedProfile(
+    val id: Int = 0,
     val cv: Any? = null,
     val extracted: ExtractedData? = null
 )

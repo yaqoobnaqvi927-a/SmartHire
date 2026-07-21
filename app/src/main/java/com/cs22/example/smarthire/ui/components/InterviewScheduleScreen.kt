@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
@@ -42,7 +43,7 @@ fun SeekerInterviewScreen(navController: NavController, viewModel: SeekerViewMod
     val interviewsState by viewModel.interviewsState.collectAsState()
     val interviews = (interviewsState as? SeekerUiState.Success)?.data ?: emptyList()
     LaunchedEffect(Unit) { viewModel.observeInterviews() }
-    InterviewScheduleScreen(navController = navController, interviews = interviews)
+    InterviewScheduleScreen(navController = navController, interviews = interviews, onDelete = { viewModel.deleteInterview(it) })
 }
 
 @Composable
@@ -63,14 +64,15 @@ fun RecruiterInterviewScreen(navController: NavController, viewModel: RecruiterV
                 candidate_name = app.effectiveCandidate?.user?.full_name
             )
         }
-    InterviewScheduleScreen(navController = navController, interviews = interviews)
+    InterviewScheduleScreen(navController = navController, interviews = interviews, onDelete = { viewModel.deleteInterview(it) })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InterviewScheduleScreen(
     navController: NavController,
-    interviews: List<InterviewResponse>
+    interviews: List<InterviewResponse>,
+    onDelete: (String) -> Unit
 ) {
     val upcoming = interviews.filter { it.status == "scheduled" }
     val past = interviews.filter { it.status != "scheduled" }
@@ -100,7 +102,7 @@ fun InterviewScheduleScreen(
             }
 
             items(upcoming) { interview ->
-                InterviewCard(navController = navController, interview = interview, isUpcoming = true)
+                InterviewCard(navController = navController, interview = interview, isUpcoming = true, onDelete = { interview.id?.let { onDelete(it) } })
             }
 
             item {
@@ -113,7 +115,7 @@ fun InterviewScheduleScreen(
             }
 
             items(past) { interview ->
-                InterviewCard(navController = navController, interview = interview, isUpcoming = false)
+                InterviewCard(navController = navController, interview = interview, isUpcoming = false, onDelete = { interview.id?.let { onDelete(it) } })
             }
             
             item { Spacer(modifier = Modifier.height(32.dp)) }
@@ -122,7 +124,7 @@ fun InterviewScheduleScreen(
 }
 
 @Composable
-fun InterviewCard(navController: NavController, interview: InterviewResponse, isUpcoming: Boolean) {
+fun InterviewCard(navController: NavController, interview: InterviewResponse, isUpcoming: Boolean, onDelete: () -> Unit = {}) {
     val infiniteTransition = rememberInfiniteTransition()
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
@@ -214,15 +216,20 @@ fun InterviewCard(navController: NavController, interview: InterviewResponse, is
             }
 
             if (isUpcoming) {
-                Button(
-                    onClick = { navController.navigate("video_call") },
-                    colors = ButtonDefaults.buttonColors(containerColor = PremiumPrimary),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                    modifier = Modifier.height(32.dp)
-                ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = "Join Call", modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Join Call", fontSize = 12.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel Interview", tint = Color(0xFFEF4444))
+                    }
+                    Button(
+                        onClick = { navController.navigate("video_call") },
+                        colors = ButtonDefaults.buttonColors(containerColor = PremiumPrimary),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.height(32.dp)
+                    ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Join Call", modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Join Call", fontSize = 12.sp)
+                    }
                 }
             }
         }

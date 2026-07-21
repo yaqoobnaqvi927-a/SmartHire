@@ -36,6 +36,9 @@ class SeekerViewModel : ViewModel() {
     private val _cvSyncState = MutableStateFlow<SeekerUiState<Unit>>(SeekerUiState.Idle)
     val cvSyncState = _cvSyncState.asStateFlow()
 
+    private val _cvsState = MutableStateFlow<SeekerUiState<List<ExtractedProfile>>>(SeekerUiState.Idle)
+    val cvsState = _cvsState.asStateFlow()
+
     private val _coverLetterState = MutableStateFlow<SeekerUiState<String>>(SeekerUiState.Idle)
     val coverLetterState = _coverLetterState.asStateFlow()
 
@@ -141,8 +144,32 @@ class SeekerViewModel : ViewModel() {
                 _cvSyncState.value = SeekerUiState.Success(Unit)
                 getProfile() // Refresh profile after parsing
                 fetchRecommendedJobs() // Refresh recommended jobs based on new skills
+                fetchCVs() // Refresh CV list
             } catch (e: Exception) {
                 _cvSyncState.value = SeekerUiState.Error(e.message ?: "Upload failed")
+            }
+        }
+    }
+
+    fun fetchCVs() {
+        viewModelScope.launch {
+            _cvsState.value = SeekerUiState.Loading
+            try {
+                val cvs = RetrofitClient.api.getCVs()
+                _cvsState.value = SeekerUiState.Success(cvs)
+            } catch (e: Exception) {
+                _cvsState.value = SeekerUiState.Error(e.message ?: "Failed to load CVs")
+            }
+        }
+    }
+
+    fun deleteCv(id: Int) {
+        viewModelScope.launch {
+            try {
+                RetrofitClient.api.deleteCV(id)
+                fetchCVs() // Refresh CV list
+            } catch (e: Exception) {
+                _actionErrorState.value = e.message ?: "Failed to delete CV"
             }
         }
     }
@@ -219,6 +246,14 @@ class SeekerViewModel : ViewModel() {
         }
     }
 
+    fun deleteInterview(interviewId: String) {
+        viewModelScope.launch {
+            JobRepository.deleteInterview(interviewId)
+                .onSuccess { observeInterviews() }
+                .onFailure { _actionErrorState.value = it.message ?: "Failed to delete interview" }
+        }
+    }
+
     fun getApplications() {
         observeApplications()
     }
@@ -234,6 +269,14 @@ class SeekerViewModel : ViewModel() {
                     onComplete(null)
                     _actionErrorState.value = it.message ?: "Failed to apply"
                 }
+        }
+    }
+
+    fun withdrawApplication(appId: String) {
+        viewModelScope.launch {
+            JobRepository.deleteApplication(appId)
+                .onSuccess { observeApplications() }
+                .onFailure { _actionErrorState.value = it.message ?: "Failed to withdraw application" }
         }
     }
 

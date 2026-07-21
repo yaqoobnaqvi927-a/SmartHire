@@ -88,7 +88,8 @@ fun AppliedTrackingScreen(viewModel: SeekerViewModel, navController: NavHostCont
                 KanbanColumnView(
                     column = column,
                     applications = columnsMap[column] ?: emptyList(),
-                    navController = navController
+                    navController = navController,
+                    viewModel = viewModel
                 )
             }
         }
@@ -97,7 +98,7 @@ fun AppliedTrackingScreen(viewModel: SeekerViewModel, navController: NavHostCont
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun KanbanColumnView(column: KanbanColumnType, applications: List<Application>, navController: NavHostController) {
+fun KanbanColumnView(column: KanbanColumnType, applications: List<Application>, navController: NavHostController, viewModel: SeekerViewModel) {
     Column(
         modifier = Modifier
             .width(280.dp)
@@ -162,7 +163,8 @@ fun KanbanColumnView(column: KanbanColumnType, applications: List<Application>, 
                         app = app,
                         columnColor = column.color,
                         modifier = Modifier.animateItem(),
-                        navController = navController
+                        navController = navController,
+                        onWithdraw = { viewModel.withdrawApplication(app.id.toString()) }
                     )
                 }
             }
@@ -171,7 +173,7 @@ fun KanbanColumnView(column: KanbanColumnType, applications: List<Application>, 
 }
 
 @Composable
-fun KanbanCard(app: Application, columnColor: Color, modifier: Modifier = Modifier, navController: NavHostController) {
+fun KanbanCard(app: Application, columnColor: Color, modifier: Modifier = Modifier, navController: NavHostController, onWithdraw: () -> Unit) {
     val companyName = app.job_details?.company ?: "Company"
     val jobTitle = app.job_details?.title ?: "Job #${app.job}"
     val initial = companyName.firstOrNull()?.uppercaseChar()?.toString() ?: "C"
@@ -226,6 +228,11 @@ fun KanbanCard(app: Application, columnColor: Color, modifier: Modifier = Modifi
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
+                }
+                
+                Spacer(Modifier.width(8.dp))
+                IconButton(onClick = onWithdraw, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Close, contentDescription = "Withdraw Application", tint = PremiumTextMuted)
                 }
             }
         }

@@ -56,6 +56,12 @@ interface SmartHireApi {
     @POST("api/jobs/jobs/")
     suspend fun postJob(@Body job: Map<String, @JvmSuppressWildcards Any>): Response<DjangoJob>
 
+    @PATCH("api/jobs/jobs/{id}/")
+    suspend fun updateJob(@Path("id") id: String, @Body job: Map<String, @JvmSuppressWildcards Any>): DjangoJob
+
+    @DELETE("api/jobs/jobs/{id}/")
+    suspend fun deleteJob(@Path("id") id: String): Response<Unit>
+
     // ═══════════════════════════════════════════════════
     // CANDIDATES — Search & View
     // ═══════════════════════════════════════════════════
@@ -99,6 +105,9 @@ interface SmartHireApi {
     @POST("api/jobs/applications/")
     suspend fun submitApplication(@Body request: JobApplicationRequest): JobApplicationResponse
 
+    @DELETE("api/jobs/applications/{id}/")
+    suspend fun deleteApplication(@Path("id") id: String): Response<Unit>
+
     // ═══════════════════════════════════════════════════
     // CV UPLOAD
     // ═══════════════════════════════════════════════════
@@ -106,6 +115,12 @@ interface SmartHireApi {
     @Multipart
     @POST("api/cv_bank/cvs/")
     suspend fun uploadCV(@Part cvFile: MultipartBody.Part): ExtractedProfile
+
+    @GET("api/cv_bank/cvs/")
+    suspend fun getCVs(): List<ExtractedProfile>
+
+    @DELETE("api/cv_bank/cvs/{id}/")
+    suspend fun deleteCV(@Path("id") id: Int): Response<Unit>
 
     // ═══════════════════════════════════════════════════
     // INTERVIEWS
@@ -120,6 +135,12 @@ interface SmartHireApi {
     @POST("api/interviews/")
     suspend fun scheduleInterview(@Body request: InterviewRequest): InterviewResponse
 
+    @PATCH("api/interviews/{id}/")
+    suspend fun updateInterview(@Path("id") id: String, @Body request: InterviewRequest): InterviewResponse
+
+    @DELETE("api/interviews/{id}/")
+    suspend fun deleteInterview(@Path("id") id: String): Response<Unit>
+
     // ═══════════════════════════════════════════════════
     // COMMUNICATIONS
     // ═══════════════════════════════════════════════════
@@ -132,6 +153,9 @@ interface SmartHireApi {
 
     @GET("api/communications/comm/notifications/")
     suspend fun getNotifications(): List<Notification>
+
+    @PATCH("api/communications/comm/{id}/mark_read/")
+    suspend fun markNotificationRead(@Path("id") id: Int): Response<Unit>
 
     // ═══════════════════════════════════════════════════
     // AI ENGINE — Skill Gap, Recommendations, Match Score

@@ -97,6 +97,14 @@ class RecruiterViewModel : ViewModel() {
         }
     }
 
+    fun deleteJob(jobId: String) {
+        viewModelScope.launch {
+            JobRepository.deleteJob(jobId)
+                .onSuccess { observeMyPostings() }
+                .onFailure { _actionErrorState.value = it.message ?: "Failed to delete job" }
+        }
+    }
+
     fun searchCandidates(skills: String, minExperience: String, degree: String) {
         viewModelScope.launch {
             _candidatesState.value = RecruiterUiState.Loading
@@ -149,10 +157,18 @@ class RecruiterViewModel : ViewModel() {
             JobRepository.scheduleInterview(appId, date, time, notes).onSuccess {
                 // If successful, update the application status to interview
                 updateApplicationStatus(applicationId, "interview")
-                fetchApplications() // Refresh applications list
+                observeApplications() // Refresh applications list
             }.onFailure { e ->
                 _actionErrorState.value = e.message ?: "Failed to schedule interview"
             }
+        }
+    }
+
+    fun deleteInterview(interviewId: String) {
+        viewModelScope.launch {
+            JobRepository.deleteInterview(interviewId)
+                .onSuccess { observeApplications() }
+                .onFailure { _actionErrorState.value = it.message ?: "Failed to delete interview" }
         }
     }
 }
