@@ -138,7 +138,7 @@ class SeekerViewModel : ViewModel() {
                 // Use the new extension function instead of deprecated MediaType.parse
                 val mediaType = "application/pdf".toMediaTypeOrNull()
                 val requestBody = okhttp3.RequestBody.create(mediaType, bytes)
-                val part = okhttp3.MultipartBody.Part.createFormData("cvFile", "resume.pdf", requestBody)
+                val part = okhttp3.MultipartBody.Part.createFormData("file", "resume.pdf", requestBody)
                 
                 RetrofitClient.api.uploadCV(part)
                 _cvSyncState.value = SeekerUiState.Success(Unit)
