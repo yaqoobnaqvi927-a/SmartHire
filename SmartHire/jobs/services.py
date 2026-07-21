@@ -29,6 +29,16 @@ def calculate_match_score(cv_skills_text, job_skills_text):
     """
     if not cv_skills_text or not job_skills_text:
         return 0.0
+        
+    if isinstance(cv_skills_text, list):
+        cv_skills_text = " ".join([str(x) for x in cv_skills_text if x])
+    elif not isinstance(cv_skills_text, str):
+        cv_skills_text = str(cv_skills_text)
+
+    if isinstance(job_skills_text, list):
+        job_skills_text = " ".join([str(x) for x in job_skills_text if x])
+    elif not isinstance(job_skills_text, str):
+        job_skills_text = str(job_skills_text)
     
     vec1 = _tokenize(cv_skills_text)
     vec2 = _tokenize(job_skills_text)
@@ -69,13 +79,18 @@ def analyze_skill_gap(candidate_skills, job_skills_required):
     """
     Performs set difference to output a list of missing critical skills.
     """
-    if isinstance(candidate_skills, str):
-        candidate_skills = [s.strip().lower() for s in candidate_skills.split(',') if s.strip()]
-    if isinstance(job_skills_required, str):
-        job_skills_required = [s.strip().lower() for s in job_skills_required.split(',') if s.strip()]
+    if not candidate_skills:
+        candidate_skills = []
+    if not job_skills_required:
+        job_skills_required = []
         
-    candidate_set = set(candidate_skills)
-    job_set = set(job_skills_required)
+    if isinstance(candidate_skills, str):
+        candidate_skills = [s.strip() for s in candidate_skills.split(',') if s.strip()]
+    if isinstance(job_skills_required, str):
+        job_skills_required = [s.strip() for s in job_skills_required.split(',') if s.strip()]
+        
+    candidate_set = set(str(s).lower() for s in candidate_skills if s)
+    job_set = set(str(s).lower() for s in job_skills_required if s)
     
     missing = list(job_set - candidate_set)
     return missing

@@ -38,6 +38,12 @@ interface SmartHireApi {
         @Query("location") location: String? = null
     ): List<DjangoJob>
 
+    @GET("api/jobs/search/")
+    suspend fun searchJobs(
+        @Query("q") query: String
+    ): List<Job>
+
+
     @GET("api/jobs/jobs/top_match/")
     suspend fun getTopMatch(): DjangoJob
 

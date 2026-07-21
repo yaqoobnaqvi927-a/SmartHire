@@ -7,5 +7,6 @@ router.register(r'jobs', JobPostingViewSet, basename='jobposting')
 router.register(r'applications', ApplicationViewSet, basename='application')
 
 urlpatterns = [
+    path('search/', JobPostingViewSet.as_view({'get': 'search'}), name='job-search'),
     path('', include(router.urls)),
 ]

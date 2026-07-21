@@ -5,7 +5,8 @@ from rest_framework.pagination import PageNumberPagination
 from .models import JobPosting, Application
 from .serializers import JobPostingSerializer, ApplicationSerializer
 from .search_engine import search_jobs
-from cv_bank.services import calculate_match_score, generate_cover_letter_with_gemini
+from cv_bank.services import generate_cover_letter_with_gemini
+from jobs.services import calculate_match_score, analyze_skill_gap
 
 
 class StandardPagination(PageNumberPagination):
@@ -212,6 +213,24 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         
         return Response({})
 
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """Keyword search endpoint /api/jobs/search/?q={keyword}"""
+        query = request.query_params.get('q', '')
+        from django.db.models import Q
+
+        jobs = JobPosting.objects.filter(status='active').order_by('-created_at')
+        if query:
+            jobs = jobs.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(company__icontains=query)
+            )
+
+        # Serialize results
+        data = JobPostingSerializer(jobs, many=True).data
+        return Response(data)
+
 
 class ApplicationViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationSerializer
@@ -252,10 +271,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             match_score = calculate_match_score(skills_str, job_skills_str)
             
             # Skill gap analysis
-            from cv_bank.services import extract_skills_from_text
-            cand_set = set(str(s).lower() for s in candidate.extracted_skills_json if s) if isinstance(candidate.extracted_skills_json, list) else set()
-            job_set = set(str(s).lower() for s in job.required_skills_json if s) if isinstance(job.required_skills_json, list) else set()
-            skill_gaps = list(job_set - cand_set)
+            skill_gaps = analyze_skill_gap(candidate.extracted_skills_json, job.required_skills_json)
             
         serializer.save(candidate=candidate, ai_match_score=match_score, skill_gap_analysis=skill_gaps)
 
@@ -275,17 +291,3 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         
         return super().partial_update(request, *args, **kwargs)
 
-
-def analyze_skill_gap(candidate_skills, job_skills_required):
-    """Compute missing skills."""
-    if not candidate_skills: candidate_skills = []
-    if not job_skills_required: job_skills_required = []
-    if isinstance(candidate_skills, str):
-        candidate_skills = [s.strip().lower() for s in candidate_skills.split(',') if s and s.strip()]
-    if isinstance(job_skills_required, str):
-        job_skills_required = [s.strip().lower() for s in job_skills_required.split(',') if s and s.strip()]
-    if isinstance(candidate_skills, list):
-        candidate_skills = [str(s).lower() for s in candidate_skills if s]
-    if isinstance(job_skills_required, list):
-        job_skills_required = [str(s).lower() for s in job_skills_required if s]
-    return list(set(job_skills_required) - set(candidate_skills))

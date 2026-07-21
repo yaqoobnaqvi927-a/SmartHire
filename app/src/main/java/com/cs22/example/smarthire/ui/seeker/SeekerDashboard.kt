@@ -204,7 +204,8 @@ fun HomeTab(viewModel: SeekerViewModel, navController: NavHostController) {
 
 @Composable
 fun HeroMatchCard(job: DjangoJob, navController: NavHostController) {
-    val matchPct = (job.match_percentage.toFloat() / 100f).coerceIn(0f, 1f)
+    val matchPercentage = job.match_percentage ?: 0
+    val matchPct = (matchPercentage.toFloat() / 100f).coerceIn(0f, 1f)
     
     Box(
         modifier = Modifier
@@ -244,16 +245,18 @@ fun HeroMatchCard(job: DjangoJob, navController: NavHostController) {
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("${job.match_percentage.toInt()}%", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                        Text("${(job.match_percentage ?: 0).toInt()}%", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                     }
                 }
                 Spacer(Modifier.width(20.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(job.title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(job.title ?: "", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     Spacer(Modifier.height(4.dp))
-                    Text(job.company, fontSize = 16.sp, color = PremiumTextMuted)
+                    Text(job.company ?: "", fontSize = 16.sp, color = PremiumTextMuted)
                     Spacer(Modifier.height(8.dp))
-                    Text(job.location.ifEmpty { job.job_type.uppercase() }, fontSize = 14.sp, color = PremiumTextMuted, fontWeight = FontWeight.Medium)
+                    val loc = job.location ?: ""
+                    val jType = job.job_type ?: ""
+                    Text(loc.ifEmpty { jType.uppercase() }.ifEmpty { "Remote" }, fontSize = 14.sp, color = PremiumTextMuted, fontWeight = FontWeight.Medium)
                 }
             }
             
@@ -289,21 +292,22 @@ fun RecommendedJobCard(job: DjangoJob, navController: NavHostController) {
                         Icon(Icons.Default.Business, null, tint = PremiumTextMuted) // Company Logo
                     }
                     Surface(color = PremiumPrimary.copy(0.1f), shape = RoundedCornerShape(8.dp)) {
-                        Text("${job.match_percentage.toInt()}% Match", color = PremiumPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                        Text("${(job.match_percentage ?: 0).toInt()}% Match", color = PremiumPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                Text(job.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = PremiumText, maxLines = 1)
+                Text(job.title ?: "", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = PremiumText, maxLines = 1)
                 Spacer(Modifier.height(4.dp))
-                Text(job.company, fontSize = 14.sp, color = PremiumTextMuted, maxLines = 1)
+                Text(job.company ?: "", fontSize = 14.sp, color = PremiumTextMuted, maxLines = 1)
             }
             
             Spacer(Modifier.height(16.dp))
             
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                job.skillsList.take(2).forEach { skill -> SkillBadge(skill) }
-                if(job.skillsList.size > 2) {
-                    SkillBadge("+${job.skillsList.size - 2}")
+                val safeSkills = job.skillsList ?: emptyList()
+                safeSkills.take(2).forEach { skill -> SkillBadge(skill) }
+                if(safeSkills.size > 2) {
+                    SkillBadge("+${safeSkills.size - 2}")
                 }
             }
         }
@@ -372,7 +376,24 @@ fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
         Spacer(Modifier.height(24.dp))
 
         when (val s = jobsState) {
-            is SeekerUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = PremiumPrimary) }
+            is SeekerUiState.Loading -> {
+                var progress by remember { mutableFloatStateOf(0f) }
+                val animatedProgress by animateFloatAsState(targetValue = progress, animationSpec = tween(durationMillis = 300, easing = LinearEasing), label = "loadingProgress")
+                LaunchedEffect(Unit) {
+                    while (progress < 99f) {
+                        kotlinx.coroutines.delay(100)
+                        progress += (Math.random() * 15).toFloat()
+                        if (progress > 99f) progress = 99f // Wait for actual state change to go to 100
+                    }
+                }
+                Box(Modifier.fillMaxSize(), Alignment.Center) { 
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(progress = { animatedProgress / 100f }, modifier = Modifier.size(64.dp), color = PremiumPrimary, trackColor = PremiumSurfaceContainer)
+                        Spacer(Modifier.height(16.dp))
+                        Text("AI analyzing job matches... ${animatedProgress.toInt()}%", color = PremiumText, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
             is SeekerUiState.Error -> Text(s.message, color = Color.Red)
             is SeekerUiState.Success -> LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 itemsIndexed(s.data) { idx, job ->
@@ -384,21 +405,47 @@ fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
                         shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(PremiumSurface), border = BorderStroke(1.dp, Color.White.copy(alpha=0.05f))
                     ) {
                         Column(Modifier.padding(20.dp)) {
-                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                                Text(job.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PremiumText, modifier = Modifier.weight(1f))
+                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.Top) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                    Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(PremiumSurfaceContainer), Alignment.Center) {
+                                        Icon(Icons.Default.Business, null, tint = PremiumTextMuted)
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    Column {
+                                        Text(job.title ?: "", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PremiumText, maxLines = 2)
+                                        Spacer(Modifier.height(4.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(job.company ?: "", color = PremiumPrimary, fontSize = 14.sp)
+                                            Text(" • ", color = PremiumTextMuted, fontSize = 14.sp)
+                                            Icon(Icons.Default.LocationOn, contentDescription = "Location", tint = PremiumTextMuted, modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(2.dp))
+                                            val loc = job.location ?: ""
+                                            Text(loc.ifEmpty { "Remote" }, color = PremiumTextMuted, fontSize = 14.sp)
+                                        }
+                                    }
+                                }
+                                val score = (job.match_percentage ?: 0).toInt()
+                                if (score > 0) {
+                                    Surface(color = Color(0xFF10B981).copy(0.1f), shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(start = 8.dp)) {
+                                        Text("$score% Match", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            Row(Modifier.fillMaxWidth(), Arrangement.End, Alignment.CenterVertically) {
+                                Text(if (expanded) "Hide Details" else "View Details", color = PremiumTextMuted, fontSize = 12.sp)
                                 Icon(if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, "Expand", tint = PremiumTextMuted)
                             }
-                            Spacer(Modifier.height(4.dp))
-                            Text("${job.company} • ${job.job_type.uppercase()}", color = PremiumPrimary, fontSize = 14.sp)
                             
                             Spacer(Modifier.height(12.dp))
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                job.skillsList.take(5).forEach { skill -> SkillBadge(skill) }
+                                val safeSkills = job.skillsList ?: emptyList()
+                                safeSkills.take(5).forEach { skill -> SkillBadge(skill) }
                             }
                             
                             AnimatedVisibility(expanded) {
                                 Column(Modifier.padding(top = 16.dp)) {
-                                    val score = job.match_percentage.toInt()
+                                    val score = (job.match_percentage ?: 0).toInt()
                                     if (score > 0) {
                                         Surface(color = Color(0xFF10B981).copy(0.1f), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                                             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -409,7 +456,8 @@ fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
                                         }
                                     }
                                     
-                                    if (job.description.isNotEmpty()) Text(job.description.take(200) + "...", color = PremiumTextMuted, fontSize = 14.sp, lineHeight = 20.sp)
+                                    val desc = job.description ?: ""
+                                    if (desc.isNotEmpty()) Text(desc.take(200) + "...", color = PremiumTextMuted, fontSize = 14.sp, lineHeight = 20.sp)
                                     Spacer(Modifier.height(20.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                         var applying by remember { mutableStateOf(false) }
@@ -425,12 +473,17 @@ fun JobsTab(viewModel: SeekerViewModel, navController: NavHostController) {
                                             }, 
                                             Modifier.weight(1f).height(48.dp), shape = RoundedCornerShape(24.dp), colors = ButtonDefaults.buttonColors(PremiumPrimary)
                                         ) {
-                                            if (applying) CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White) else Text("Apply & Chat", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                            if (applying) CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White) 
+                                            else {
+                                                Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Apply & Chat", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                            }
                                         }
                                         OutlinedButton(
                                             onClick = { job.id?.let { navController.navigate("job_detail/$it") } }, 
                                             Modifier.weight(1f).height(48.dp), shape = RoundedCornerShape(24.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = PremiumText), border = BorderStroke(1.dp, Color.White.copy(alpha=0.1f))
-                                        ) { Text("View Details", fontSize = 14.sp) }
+                                        ) { Text("View Full Details", fontSize = 14.sp) }
                                     }
                                 }
                             }
