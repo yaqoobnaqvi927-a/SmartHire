@@ -107,7 +107,7 @@ fun SeekerDashboard(viewModel: SeekerViewModel, navController: NavHostController
                             items = bottomNavItems, 
                             selectedTab = selectedTab, 
                             onTabSelected = { 
-                                if (it == 2) launcher.launch("application/pdf")
+                                if (it == 2) navController.navigate("cv_upload")
                                 else selectedTab = it 
                             }, 
                             activeColor = PremiumPrimary, 

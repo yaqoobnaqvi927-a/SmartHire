@@ -23,6 +23,7 @@ import com.cs22.example.smarthire.ui.components.InterviewScheduleScreen
 import com.cs22.example.smarthire.ui.components.SeekerInterviewScreen
 import com.cs22.example.smarthire.ui.components.RecruiterInterviewScreen
 import com.cs22.example.smarthire.ui.seeker.CvVaultScreen
+import com.cs22.example.smarthire.ui.seeker.CvUploadScreen
 import com.cs22.example.smarthire.ui.seeker.SkillGapReportScreen
 import com.cs22.example.smarthire.ui.seeker.SettingsScreen
 import com.cs22.example.smarthire.ui.recruiter.JobPostingWizardScreen
@@ -132,11 +133,21 @@ class MainActivity : ComponentActivity() {
                             val appId = backStackEntry.arguments?.getString("applicationId") ?: return@composable
                             ChatScreen(applicationId = appId)
                         }
+                        composable(
+                            route = "interview_schedule/{applicationId}",
+                            arguments = listOf(navArgument("applicationId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val appId = backStackEntry.arguments?.getString("applicationId") ?: return@composable
+                            InterviewScheduleScreen(navController = navController, interviews = emptyList(), onDelete = {})
+                        }
                         composable("notifications") {
                             NotificationScreen(navController = navController)
                         }
                         composable("cv_vault") {
                             CvVaultScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
+                        }
+                        composable("cv_upload") {
+                            CvUploadScreen(navController = navController, viewModel = androidx.lifecycle.viewmodel.compose.viewModel())
                         }
                         composable(
                             route = "skill_gap/{applicationId}",
@@ -166,6 +177,16 @@ class MainActivity : ComponentActivity() {
                                 applicationId = appId,
                                 viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
                                 navController = navController
+                            )
+                        }
+                        composable(
+                            route = "skill_analysis/{candidateId}",
+                            arguments = listOf(navArgument("candidateId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val candidateId = backStackEntry.arguments?.getString("candidateId")
+                            com.cs22.example.smarthire.ui.recruiter.CandidateSkillAnalysisScreen(
+                                navController = navController,
+                                candidateId = candidateId
                             )
                         }
                         composable("my_interviews") {

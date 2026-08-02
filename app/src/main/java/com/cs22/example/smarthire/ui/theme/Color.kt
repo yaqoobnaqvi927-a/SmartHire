@@ -14,6 +14,10 @@ val SmartHireOutline = Color(0xFF374151) // Subtle border
 val SmartHireError = Color(0xFFEF4444)
 val SmartHireSuccess = Color(0xFF10B981)
 
+val PremiumBg = SmartHireBackground
+val PremiumSurface = SmartHireSurface
+val PremiumPrimary = SmartHirePrimary
+
 // Legacy Colors (keeping for compatibility if needed)
 val BackgroundLight = Color(0xFFF1F5F9)
 val SurfaceLight = Color(0xFFFFFFFF)

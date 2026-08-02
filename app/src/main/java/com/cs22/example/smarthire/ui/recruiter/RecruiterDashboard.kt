@@ -67,7 +67,7 @@ fun RecruiterDashboard(viewModel: RecruiterViewModel, navController: NavHostCont
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (selectedTab) {
-                0 -> RecruiterConsoleTab(viewModel)
+                0 -> RecruiterConsoleTab(viewModel, navController)
                 1 -> PostJobTab(viewModel, navController)
                 2 -> AiMatchTab(viewModel, navController)
                 3 -> PipelineTab(viewModel, navController)
@@ -77,10 +77,18 @@ fun RecruiterDashboard(viewModel: RecruiterViewModel, navController: NavHostCont
 }
 
 // ══════════════════ CONSOLE TAB (PREMIUM DASHBOARD) ══════════════════
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecruiterConsoleTab(viewModel: RecruiterViewModel) {
+fun RecruiterConsoleTab(viewModel: RecruiterViewModel, navController: NavHostController) {
     val postingsState by viewModel.myPostingsState.collectAsState()
     val statsState by viewModel.statsState.collectAsState()
+    
+    var selectedCandidate by remember { mutableStateOf<CandidateProfileResponse?>(null) }
+
+    val mockTalentPool = listOf(
+        CandidateProfileResponse(id = "1", user = UserInfo(full_name = "Alice Smith"), degree = "B.S. CS", experience_years = 3, match_percentage = 92.0, profile_completeness = 85, skills = "Kotlin, Android", bio = "Android Developer"),
+        CandidateProfileResponse(id = "2", user = UserInfo(full_name = "Bob Jones"), degree = "M.S. SE", experience_years = 5, match_percentage = 88.0, profile_completeness = 90, skills = "Python, Django", bio = "Backend Engineer")
+    )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -223,7 +231,100 @@ fun RecruiterConsoleTab(viewModel: RecruiterViewModel) {
             }
             else -> {}
         }
+        
+        item {
+            Spacer(Modifier.height(24.dp))
+            Text("Talent Pool", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        items(mockTalentPool) { candidate ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { selectedCandidate = candidate },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(PremiumSurface),
+                border = BorderStroke(1.dp, SmartHireOutline)
+            ) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .background(PremiumPrimary.copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(candidate.user?.full_name?.take(1) ?: "C", color = PremiumPrimary, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(candidate.user?.full_name ?: "Candidate", fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
+                        Text("${candidate.degree} • ${candidate.experience_years} years exp", fontSize = 12.sp, color = SmartHireOnSurfaceVariant)
+                    }
+                }
+            }
+        }
+        
         item { Spacer(Modifier.height(80.dp)) }
+    }
+
+    if (selectedCandidate != null) {
+        ModalBottomSheet(
+            onDismissRequest = { selectedCandidate = null },
+            containerColor = PremiumBg
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(PremiumPrimary.copy(alpha = 0.2f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(selectedCandidate?.user?.full_name?.take(1) ?: "C", color = PremiumPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(selectedCandidate?.user?.full_name ?: "Candidate Name", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = SmartHireOnSurface)
+                Text(selectedCandidate?.bio ?: "Professional bio goes here.", fontSize = 14.sp, color = SmartHireOnSurfaceVariant)
+                Spacer(Modifier.height(16.dp))
+                
+                Card(colors = CardDefaults.cardColors(containerColor = PremiumSurface), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Profile Completion", color = SmartHireOnSurfaceVariant, fontSize = 12.sp)
+                        Text("${selectedCandidate?.profile_completeness}%", color = PremiumPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(16.dp))
+                        Text("Matched Job Preview", color = SmartHireOnSurfaceVariant, fontSize = 12.sp)
+                        Text("Software Engineer Role - ${selectedCandidate?.match_percentage}% Match", color = SmartHireOnSurface, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+                
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Button(
+                        onClick = { 
+                            selectedCandidate = null
+                            navController.navigate("skill_analysis/${selectedCandidate?.id}") 
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = PremiumPrimary)
+                    ) {
+                        Text("Skill Analysis")
+                    }
+                    OutlinedButton(
+                        onClick = { selectedCandidate = null },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = SmartHireOnSurface)
+                    ) {
+                        Text("Close")
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
+            }
+        }
     }
 }
 
