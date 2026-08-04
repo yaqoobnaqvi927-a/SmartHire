@@ -77,7 +77,7 @@ fun SplashScreen(
                 else navController.navigate("profile_setup") { popUpTo("splash") { inclusive = true } }
             }
         } else if (!authState.isLoading) {
-            navController.navigate("role_selection") {
+            navController.navigate("onboarding") {
                 popUpTo("splash") { inclusive = true }
             }
         }

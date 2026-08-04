@@ -58,6 +58,9 @@ class MainActivity : ComponentActivity() {
                                 navController = navController
                             )
                         }
+                        composable("onboarding") {
+                            OnboardingScreen(navController = navController)
+                        }
                         composable("role_selection") {
                             RoleSelectionScreen(
                                 onJobSeekerSelected = {

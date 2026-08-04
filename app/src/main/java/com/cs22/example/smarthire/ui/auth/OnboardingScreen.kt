@@ -1,238 +1,302 @@
 package com.cs22.example.smarthire.ui.auth
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import kotlinx.coroutines.launch
+import androidx.navigation.NavHostController
 
-val PremiumBg = Color(0xFF0F131D)
-val PremiumPrimary = Color(0xFF3B82F6)
-val PremiumSecondary = Color(0xFF8B5CF6)
-val PremiumText = Color(0xFFE1E2E4)
-val PremiumTextMuted = Color(0xFFC2C6D6)
-
-data class OnboardingPage(
-    val icon: ImageVector,
+data class OnboardingPageData(
+    val stepText: String,
+    val progress: Float,
     val title: String,
-    val subtitle: String,
-    val gradientColors: List<Color>
+    val description: String,
+    val icon: ImageVector,
+    val secondaryIcon: ImageVector? = null,
+    val badgeLabel: String? = null
 )
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun OnboardingScreen(navController: NavController) {
+fun OnboardingScreen(navController: NavHostController) {
+    var currentPage by remember { mutableIntStateOf(0) }
+
     val pages = listOf(
-        OnboardingPage(
-            icon = Icons.Default.AutoAwesome,
-            title = "AI-Powered Matching",
-            subtitle = "SmartHire analyzes your skills and matches you with the perfect opportunities automatically.",
-            gradientColors = listOf(Color(0xFF3B82F6), Color(0xFF60A5FA)) // Blue
-        ),
-        OnboardingPage(
+        OnboardingPageData(
+            stepText = "1/3",
+            progress = 0.33f,
+            title = "AI-Powered\nCV Banking",
+            description = "Automated, offline CV text and skill extraction using spaCy NLP algorithms.",
             icon = Icons.Default.Description,
-            title = "Instant Cover Letters",
-            subtitle = "Generate personalized, professional cover letters for any job in seconds with AI.",
-            gradientColors = listOf(Color(0xFF8B5CF6), Color(0xFFA78BFA)) // Purple
+            secondaryIcon = Icons.Default.AutoAwesome
         ),
-        OnboardingPage(
+        OnboardingPageData(
+            stepText = "2/3",
+            progress = 0.66f,
+            title = "Smart Job Matching\n85% Accuracy",
+            description = "Cosine similarity algorithm calculating real-time candidate match scores.",
+            icon = Icons.Default.Settings,
+            secondaryIcon = Icons.Default.Analytics,
+            badgeLabel = "85%"
+        ),
+        OnboardingPageData(
+            stepText = "3/3",
+            progress = 1.0f,
+            title = "Video Interviews &\nProgress Tracking",
+            description = "In-app video interviews and real-time application pipeline tracking.",
             icon = Icons.Default.Videocam,
-            title = "Built-In Video Interviews",
-            subtitle = "Schedule and join interviews directly in the app—no third-party tools needed.",
-            gradientColors = listOf(Color(0xFF10B981), Color(0xFF34D399)) // Green
+            secondaryIcon = Icons.Default.Work
         )
     )
 
-    val pagerState = rememberPagerState(pageCount = { pages.size })
-    val coroutineScope = rememberCoroutineScope()
+    val currentData = pages[currentPage]
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(PremiumBg)
-    ) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) { pageIndex ->
-            OnboardingSlide(page = pages[pageIndex])
-        }
-
-        // Indicators
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            pages.forEachIndexed { index, _ ->
-                val width by animateDpAsState(
-                    targetValue = if (pagerState.currentPage == index) 24.dp else 8.dp,
-                    animationSpec = tween(300),
-                    label = "indicatorWidth"
-                )
-                val color by animateColorAsState(
-                    targetValue = if (pagerState.currentPage == index) PremiumPrimary else PremiumTextMuted.copy(alpha = 0.3f),
-                    animationSpec = tween(300),
-                    label = "indicatorColor"
-                )
-
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .height(8.dp)
-                        .width(width)
-                        .clip(CircleShape)
-                        .background(color)
-                )
-            }
-        }
-
-        // Buttons
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Button(
-                onClick = {
-                    if (pagerState.currentPage < pages.lastIndex) {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                        }
-                    } else {
-                        navController.navigate("role_selection") {
-                            popUpTo(0)
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                contentPadding = PaddingValues()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush = Brush.horizontalGradient(listOf(PremiumPrimary, PremiumSecondary))
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (pagerState.currentPage == pages.lastIndex) "Get Started" else "Next",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(
-                onClick = {
-                    navController.navigate("role_selection") {
-                        popUpTo(0)
-                    }
-                }
-            ) {
-                Text(
-                    text = "Skip",
-                    color = PremiumTextMuted,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+    fun completeOnboarding() {
+        navController.navigate("role_selection") {
+            popUpTo("onboarding") { inclusive = true }
         }
     }
-}
 
-@Composable
-fun OnboardingSlide(page: OnboardingPage) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "iconScale"
-    )
+    val primaryBlue = Color(0xFF3B82F6)
+    val lightBg = Color(0xFFF3F6FC)
+    val cardBg = Color.White
+    val textDark = Color(0xFF1E293B)
+    val textMuted = Color(0xFF64748B)
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(lightBg)
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(140.dp)
-                .scale(scale)
-                .background(
-                    brush = Brush.linearGradient(page.gradientColors),
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = page.icon,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(80.dp)
+            // Header Title
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "SmartHire",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = textDark
             )
+
+            // Main Card Container (matching screenshot layout)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(vertical = 24.dp)
+                    .shadow(16.dp, shape = RoundedCornerShape(32.dp), spotColor = Color.Black.copy(0.08f)),
+                shape = RoundedCornerShape(32.dp),
+                colors = CardDefaults.cardColors(containerColor = cardBg)
+            ) {
+                AnimatedContent(
+                    targetState = currentPage,
+                    transitionSpec = {
+                        if (targetState > initialState) {
+                            slideInHorizontally { width -> width } + fadeIn() with
+                                    slideOutHorizontally { width -> -width } + fadeOut()
+                        } else {
+                            slideInHorizontally { width -> -width } + fadeIn() with
+                                    slideOutHorizontally { width -> width } + fadeOut()
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                ) { pageIndex ->
+                    val page = pages[pageIndex]
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceAround
+                    ) {
+                        // Top Illustration Graphic
+                        Box(
+                            modifier = Modifier
+                                .size(160.dp)
+                                .background(primaryBlue.copy(alpha = 0.08f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(110.dp)
+                                    .background(primaryBlue.copy(alpha = 0.15f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = page.icon,
+                                    contentDescription = null,
+                                    tint = primaryBlue,
+                                    modifier = Modifier.size(56.dp)
+                                )
+
+                                page.badgeLabel?.let { badge ->
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.Center)
+                                            .size(48.dp)
+                                            .background(primaryBlue, CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = badge,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Title & Description
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = page.title,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textDark,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 32.sp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = page.description,
+                                fontSize = 14.sp,
+                                color = textMuted,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 20.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                        }
+
+                        // Circular Progress Indicator Badge (1/3, 2/3, 3/3)
+                        Box(
+                            modifier = Modifier.size(64.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                drawCircle(
+                                    color = primaryBlue.copy(alpha = 0.15f),
+                                    style = Stroke(width = 4.dp.toPx())
+                                )
+                                drawArc(
+                                    color = primaryBlue,
+                                    startAngle = -90f,
+                                    sweepAngle = 360f * page.progress,
+                                    useCenter = false,
+                                    style = Stroke(width = 4.dp.toPx())
+                                )
+                            }
+                            Text(
+                                text = page.stepText,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textDark
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Bottom Navigation Row (Next / Skip / Get Started)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (currentPage < pages.size - 1) {
+                        Text(
+                            text = "Skip",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = primaryBlue,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { completeOnboarding() }
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.width(48.dp))
+                    }
+
+                    Button(
+                        onClick = {
+                            if (currentPage < pages.size - 1) {
+                                currentPage++
+                            } else {
+                                completeOnboarding()
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp)
+                            .padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(26.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue)
+                    ) {
+                        Text(
+                            text = if (currentPage == pages.size - 1) "Get Started" else "Next",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    if (currentPage < pages.size - 1) {
+                        Text(
+                            text = "Skip",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = primaryBlue,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { completeOnboarding() }
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.width(48.dp))
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
-
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Text(
-            text = page.title,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = page.subtitle,
-            fontSize = 16.sp,
-            color = PremiumTextMuted,
-            textAlign = TextAlign.Center,
-            lineHeight = 24.sp
-        )
     }
 }
