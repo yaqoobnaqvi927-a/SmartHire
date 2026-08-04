@@ -10,20 +10,33 @@ from collections import Counter
 
 import PyPDF2
 
+try:
+    from cv_bank.parsing import parse_cv_text as fast_parse_cv_text, extract_text_from_pdf as fast_extract_text_from_pdf
+except ImportError:
+    fast_parse_cv_text = None
+    fast_extract_text_from_pdf = None
+
 # spaCy NLP model integration
 try:
     import spacy
     try:
         nlp = spacy.load("en_core_web_sm")
     except Exception:
-        # Fallback if download command failed or model not found
         nlp = None
 except ImportError:
     nlp = None
 
 
 def extract_text_from_pdf(pdf_file):
-    """Extract raw text from a PDF file."""
+    """Extract raw text from a PDF file using high-speed PyMuPDF + PyPDF2 fallback."""
+    if fast_extract_text_from_pdf is not None:
+        try:
+            extracted = fast_extract_text_from_pdf(pdf_file)
+            if extracted:
+                return extracted
+        except Exception as err:
+            print(f"Fast PDF extraction error, falling back: {err}")
+
     text = ""
     try:
         reader = PyPDF2.PdfReader(pdf_file)
@@ -396,8 +409,14 @@ def generate_local_bio(name, degree, skills, experience):
 def parse_cv_locally_with_nlp(text):
     """
     Perform local offline parsing using spaCy NLP + regular expressions + section segmentation.
-    Highly optimized for fast, accurate local extraction.
+    Highly optimized for fast, accurate local extraction via cv_bank.parsing.
     """
+    if fast_parse_cv_text is not None:
+        try:
+            return fast_parse_cv_text(text)
+        except Exception as err:
+            print(f"Fast NLP parse error, falling back to legacy: {err}")
+
     cleaned_text = clean_resume_text(text)
     
     email = _extract_email(cleaned_text)
@@ -416,7 +435,6 @@ def parse_cv_locally_with_nlp(text):
     education_list = parse_education_section(sections.get('education', ''), doc)
     experience_list = parse_experience_section(sections.get('experience', ''), doc)
     
-    # Extract degree using education section specifically to avoid global false positives
     degree = extract_degree(cleaned_text, sections.get('education', ''))
     certifications = parse_certifications(sections.get('certifications', ''), cleaned_text)
     languages = parse_languages(sections.get('languages', ''), cleaned_text)
