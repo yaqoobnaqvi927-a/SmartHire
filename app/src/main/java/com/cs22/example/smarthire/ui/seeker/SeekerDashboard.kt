@@ -86,8 +86,11 @@ fun SeekerDashboard(viewModel: SeekerViewModel, navController: NavHostController
                         }
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("Hello,", fontSize = 14.sp, color = PremiumTextMuted)
-                            Text("Seeker", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PremiumText)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("SmartHire", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PremiumPrimary)
+                                Text(" • Seeker", fontSize = 14.sp, color = PremiumTextMuted)
+                            }
+                            Text("Powered For Quest Nawabshah", fontSize = 10.sp, color = PremiumTextMuted, fontWeight = FontWeight.Medium)
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

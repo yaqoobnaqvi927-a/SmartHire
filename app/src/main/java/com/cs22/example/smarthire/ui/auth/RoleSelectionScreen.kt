@@ -72,8 +72,15 @@ fun RoleSelectionScreen(
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFFADC6FF),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "Powered For Quest Nawabshah",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF90A4AE),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
             )
 
             Text(

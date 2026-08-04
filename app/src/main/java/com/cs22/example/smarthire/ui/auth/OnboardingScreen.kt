@@ -103,12 +103,20 @@ fun OnboardingScreen(navController: NavHostController) {
         ) {
             // Header Title
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "SmartHire",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = textDark
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "SmartHire",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textDark
+                )
+                Text(
+                    text = "Powered For Quest Nawabshah",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = textMuted
+                )
+            }
 
             // Main Card Container (matching screenshot layout)
             Card(

@@ -1,11 +1,13 @@
 from django.urls import path
 from django.http import HttpResponse
 from create_demo_data import create_demo_data
+from populate_quest_demo import populate_quest_data
 
 def populate_demo_data(request):
     try:
         create_demo_data()
-        return HttpResponse('<h1>Success!</h1><p>Demo data populated successfully.</p>')
+        populate_quest_data()
+        return HttpResponse('<h1>Success!</h1><p>QUEST Nawabshah demo data populated successfully.</p>')
     except Exception as e:
         return HttpResponse(f'<h1>Error</h1><p>{str(e)}</p>')
 

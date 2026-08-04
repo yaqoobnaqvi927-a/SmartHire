@@ -113,13 +113,21 @@ fun SplashScreen(
                 Spacer(modifier = Modifier.width(16.dp))
                 
                 // Pulsing Text
-                Text(
-                    text = "SmartHire",
-                    color = Color(0xFFADC6FF).copy(alpha = logoAlpha),
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.scale(pulseScale)
-                )
+                Column {
+                    Text(
+                        text = "SmartHire",
+                        color = Color(0xFFADC6FF).copy(alpha = logoAlpha),
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.scale(pulseScale)
+                    )
+                    Text(
+                        text = "Powered For Quest Nawabshah",
+                        color = Color(0xFF90A4AE).copy(alpha = logoAlpha),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
 
             // Animated Progress Track

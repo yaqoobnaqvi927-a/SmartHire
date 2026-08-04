@@ -52,7 +52,10 @@ fun RecruiterDashboard(viewModel: RecruiterViewModel, navController: NavHostCont
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.AutoAwesome, null, tint = SmartHirePrimary, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("SmartHire Recruiter", fontWeight = FontWeight.Bold, color = SmartHireOnSurface, fontSize = 20.sp)
+                    Column {
+                        Text("SmartHire Recruiter", fontWeight = FontWeight.Bold, color = SmartHireOnSurface, fontSize = 18.sp)
+                        Text("Powered For Quest Nawabshah", fontSize = 10.sp, color = SmartHireOnSurfaceVariant, fontWeight = FontWeight.Medium)
+                    }
                 }
             },
             actions = {
