@@ -80,6 +80,8 @@ class RecruiterViewModel : ViewModel() {
                 title, company, location, type, "General", description, salary, skills, minExp.toString()
             ).onSuccess {
                 _postJobState.value = RecruiterUiState.Success(Unit)
+                observeMyPostings()
+                observeStats()
             }.onFailure { e ->
                 _postJobState.value = RecruiterUiState.Error(e.message ?: "Post failed")
             }
@@ -90,17 +92,21 @@ class RecruiterViewModel : ViewModel() {
         _postJobState.value = RecruiterUiState.Idle
     }
 
-    fun toggleJobStatus(jobId: String) {
+    fun toggleJobStatus(jobId: String, status: String = "active") {
         viewModelScope.launch {
-            // In a real app, we would toggle status based on current state
-            JobRepository.toggleJobStatus(jobId, "active") 
+            JobRepository.toggleJobStatus(jobId, status).onSuccess {
+                observeMyPostings()
+            }
         }
     }
 
     fun deleteJob(jobId: String) {
         viewModelScope.launch {
             JobRepository.deleteJob(jobId)
-                .onSuccess { observeMyPostings() }
+                .onSuccess { 
+                    observeMyPostings()
+                    observeStats()
+                }
                 .onFailure { _actionErrorState.value = it.message ?: "Failed to delete job" }
         }
     }
@@ -122,25 +128,31 @@ class RecruiterViewModel : ViewModel() {
     }
 
     fun fetchApplications() {
-        // Handled by observeApplications()
+        observeApplications()
     }
 
     fun updateApplicationStatus(appId: String, status: String) {
         viewModelScope.launch {
             try {
                 JobRepository.updateApplicationStatus(appId, status)
+                observeApplications()
+                observeStats()
             } catch(e: Exception) {
                 _actionErrorState.value = e.message ?: "Failed to update status"
             }
         }
     }
 
-    fun addToPipeline(candidateUid: String) {
+    fun addToPipeline(candidateUid: String, jobId: String? = null) {
         viewModelScope.launch {
-            // Default to the first active job for now, or would normally show a picker
-            val firstJob = (myPostingsState.value as? RecruiterUiState.Success)?.data?.firstOrNull()
-            firstJob?.id?.let { jobId ->
-                JobRepository.addToPipeline(jobId.toString(), candidateUid)
+            val targetJobId = jobId ?: (myPostingsState.value as? RecruiterUiState.Success)?.data?.firstOrNull()?.id
+            targetJobId?.let { jId ->
+                JobRepository.addToPipeline(jId, candidateUid).onSuccess {
+                    observeApplications()
+                    observeStats()
+                }.onFailure {
+                    _actionErrorState.value = it.message ?: "Failed to add to pipeline"
+                }
             }
         }
     }

@@ -17,12 +17,16 @@ class StandardPagination(PageNumberPagination):
 
 class JobPostingViewSet(viewsets.ModelViewSet):
     serializer_class = JobPostingSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    pagination_class = StandardPagination
+    pagination_class = None
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         user = self.request.user
-        if hasattr(user, 'recruiter_profile'):
+        if user.is_authenticated and hasattr(user, 'recruiter_profile'):
             return JobPosting.objects.filter(recruiter=user.recruiter_profile).order_by('-created_at')
         return JobPosting.objects.filter(status='active').order_by('-created_at')
 
@@ -42,7 +46,7 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         
         # Get candidate skills for personalized matching
         candidate_skills = None
-        if hasattr(request.user, 'candidate_profile'):
+        if request.user.is_authenticated and hasattr(request.user, 'candidate_profile'):
             profile = request.user.candidate_profile
             if profile.extracted_skills_json:
                 candidate_skills = [str(s) for s in profile.extracted_skills_json] if isinstance(profile.extracted_skills_json, list) else []
@@ -66,10 +70,6 @@ class JobPostingViewSet(viewsets.ModelViewSet):
             serialized['match_percentage'] = result['match_percentage']
             data.append(serialized)
         
-        # Paginate manually
-        page = self.paginate_queryset(data)
-        if page is not None:
-            return self.get_paginated_response(page)
         return Response(data)
 
     def perform_create(self, serializer):

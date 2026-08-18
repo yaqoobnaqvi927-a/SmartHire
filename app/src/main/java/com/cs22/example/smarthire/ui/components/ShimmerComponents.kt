@@ -5,21 +5,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-
-private val PremiumBg = Color(0xFF0F131D)
-private val PremiumSurface = Color(0xFF161B28)
-private val PremiumSurfaceContainer = Color(0xFF1D2433)
-private val ShimmerColorShaded = Color(0x80252D40)
-private val ShimmerColorLight = Color(0x403A4660)
+import com.cs22.example.smarthire.ui.theme.*
 
 @Composable
 fun ShimmerBrush(showShimmer: Boolean = true): Brush {
@@ -35,7 +30,7 @@ fun ShimmerBrush(showShimmer: Boolean = true): Brush {
             label = "shimmerAnimation"
         )
         Brush.linearGradient(
-            colors = listOf(ShimmerColorShaded, ShimmerColorLight, ShimmerColorShaded),
+            colors = listOf(StSurfaceContainer, StSurfaceContainerLow, StSurfaceContainer),
             start = Offset.Zero,
             end = Offset(x = translateAnim.value, y = translateAnim.value)
         )
@@ -49,118 +44,89 @@ fun ShimmerBrush(showShimmer: Boolean = true): Brush {
 }
 
 @Composable
-fun ShimmerJobCard() {
-    val shimmerBrush = ShimmerBrush()
-    Card(
-        modifier = Modifier
-            .width(280.dp)
-            .height(160.dp),
-        colors = CardDefaults.cardColors(containerColor = PremiumSurface),
-        shape = RoundedCornerShape(16.dp)
+fun ShimmerEffect(modifier: Modifier) {
+    Box(modifier = modifier.background(ShimmerBrush()))
+}
+
+@Composable
+fun JobCardSkeleton() {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = StSurface,
+        shadowElevation = 4.dp,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                ShimmerEffect(Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)))
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    ShimmerEffect(Modifier.fillMaxWidth(0.7f).height(16.dp).clip(RoundedCornerShape(4.dp)))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ShimmerEffect(Modifier.fillMaxWidth(0.4f).height(14.dp).clip(RoundedCornerShape(4.dp)))
+                }
+                ShimmerEffect(Modifier.width(60.dp).height(24.dp).clip(RoundedCornerShape(12.dp)))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ShimmerEffect(Modifier.width(80.dp).height(24.dp).clip(RoundedCornerShape(12.dp)))
+                ShimmerEffect(Modifier.width(100.dp).height(24.dp).clip(RoundedCornerShape(12.dp)))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                ShimmerEffect(Modifier.width(80.dp).height(16.dp).clip(RoundedCornerShape(4.dp)))
+                ShimmerEffect(Modifier.width(120.dp).height(40.dp).clip(RoundedCornerShape(20.dp)))
+            }
+        }
+    }
+}
+
+@Composable
+fun StatCardSkeleton() {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = StSurface,
+        modifier = Modifier.size(160.dp).padding(8.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.Center
         ) {
-            Column {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .height(24.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(shimmerBrush)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.4f)
-                        .height(16.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(shimmerBrush)
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                repeat(3) {
-                    Box(
-                        modifier = Modifier
-                            .width(60.dp)
-                            .height(24.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(shimmerBrush)
-                    )
-                }
-            }
+            ShimmerEffect(Modifier.size(40.dp).clip(CircleShape))
+            Spacer(modifier = Modifier.height(12.dp))
+            ShimmerEffect(Modifier.width(60.dp).height(28.dp).clip(RoundedCornerShape(4.dp)))
+            Spacer(modifier = Modifier.height(8.dp))
+            ShimmerEffect(Modifier.width(100.dp).height(14.dp).clip(RoundedCornerShape(4.dp)))
         }
     }
 }
 
 @Composable
-fun ShimmerCandidateCard() {
-    val shimmerBrush = ShimmerBrush()
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(90.dp),
-        colors = CardDefaults.cardColors(containerColor = PremiumSurface),
-        shape = RoundedCornerShape(12.dp)
+fun NotificationItemSkeleton() {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-                    .background(shimmerBrush)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .height(20.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(shimmerBrush)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.4f)
-                        .height(14.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(shimmerBrush)
-                )
-            }
+        ShimmerEffect(Modifier.size(48.dp).clip(CircleShape))
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            ShimmerEffect(Modifier.fillMaxWidth(0.8f).height(16.dp).clip(RoundedCornerShape(4.dp)))
+            Spacer(modifier = Modifier.height(8.dp))
+            ShimmerEffect(Modifier.fillMaxWidth(0.5f).height(12.dp).clip(RoundedCornerShape(4.dp)))
         }
     }
 }
 
 @Composable
-fun ShimmerDashboardHeader() {
-    val shimmerBrush = ShimmerBrush()
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .height(32.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(shimmerBrush)
-        )
+fun ProfileSkeleton() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        ShimmerEffect(Modifier.size(100.dp).clip(CircleShape))
+        Spacer(modifier = Modifier.height(16.dp))
+        ShimmerEffect(Modifier.width(150.dp).height(24.dp).clip(RoundedCornerShape(8.dp)))
         Spacer(modifier = Modifier.height(8.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .height(20.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(shimmerBrush)
-        )
+        ShimmerEffect(Modifier.width(200.dp).height(16.dp).clip(RoundedCornerShape(4.dp)))
     }
 }

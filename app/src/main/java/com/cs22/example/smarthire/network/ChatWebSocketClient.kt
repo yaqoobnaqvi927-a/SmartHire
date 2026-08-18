@@ -17,7 +17,9 @@ class ChatWebSocketClient(private val tokenManager: TokenManager) {
     val messages: SharedFlow<ChatMessage> = _messages
 
     fun connect(threadId: String) {
-        val wsUrl = "ws://192.168.1.40:8000/ws/chat/$threadId/"
+        val baseUrl = RetrofitClient.BASE_URL
+        val wsBase = baseUrl.replace("http://", "ws://").replace("https://", "wss://").trimEnd('/')
+        val wsUrl = "$wsBase/ws/chat/$threadId/"
         val request = Request.Builder()
             .url(wsUrl)
             .build()

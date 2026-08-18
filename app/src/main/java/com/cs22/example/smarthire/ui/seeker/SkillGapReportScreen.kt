@@ -13,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -23,10 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.cs22.example.smarthire.ui.theme.*
 import com.cs22.example.smarthire.viewmodel.SeekerUiState
 import com.cs22.example.smarthire.viewmodel.SeekerViewModel
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SkillGapReportScreen(viewModel: SeekerViewModel, navController: NavHostController, applicationId: String) {
     val skillGapState by viewModel.skillGapState.collectAsState()
@@ -37,114 +37,116 @@ fun SkillGapReportScreen(viewModel: SeekerViewModel, navController: NavHostContr
 
     Scaffold(
         topBar = {
-            Row(
-                modifier = Modifier.fillMaxWidth().background(Color(0xFF0F131D)).padding(horizontal = 16.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFF1D2433).copy(alpha=0.8f))) {
-                    Icon(Icons.Default.ArrowBack, null, tint = Color(0xFFE1E2E4))
-                }
-                Text("AI Match Report", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE1E2E4))
-                IconButton(onClick = { }, modifier = Modifier.size(48.dp).clip(CircleShape).background(Color(0xFF1D2433).copy(alpha=0.8f))) {
-                    Icon(Icons.Default.Share, null, tint = Color(0xFFE1E2E4))
-                }
-            }
+            TopAppBar(
+                title = { Text("CV Analysis", color = StPrimary, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, null, tint = StOnSurface)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = StBackground)
+            )
         },
-        containerColor = Color(0xFF0F131D)
+        containerColor = StBackground
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            Box(modifier = Modifier.offset(x = 100.dp, y = (-50).dp).size(300.dp).background(Color(0xFF10B981).copy(alpha = 0.1f), CircleShape).blur(120.dp))
-            Box(modifier = Modifier.align(Alignment.BottomStart).offset(x = (-100).dp, y = 100.dp).size(300.dp).background(Color(0xFF8B5CF6).copy(alpha = 0.1f), CircleShape).blur(120.dp))
-
             when (val s = skillGapState) {
-                is SeekerUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = Color(0xFF3B82F6)) }
-                is SeekerUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text(s.message, color = Color.Red) }
+                is SeekerUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = StPrimary) }
+                is SeekerUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text(s.message, color = StError) }
                 is SeekerUiState.Success -> {
                     val score = (s.data["match_percentage"] as? Number)?.toFloat() ?: 78f
-                    val matched = s.data["matched_skills"] as? List<String> ?: listOf("Python", "Django", "SQL")
-                    val missing = s.data["missing_skills"] as? List<String> ?: listOf("Docker", "AWS", "Kubernetes")
-                    val rec = s.data["recommendation"] as? String ?: "Consider learning Docker and AWS to improve your score for similar roles."
+                    val matched = s.data["matched_skills"] as? List<String> ?: listOf("Python", "Django")
+                    val missing = s.data["missing_skills"] as? List<String> ?: listOf("Docker", "AWS")
+                    val rec = s.data["recommendation"] as? String ?: "Consider learning Docker."
 
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        item { Spacer(Modifier.height(32.dp)) }
-                        item {
-                            Box(Modifier.size(160.dp), Alignment.Center) {
-                                Canvas(Modifier.fillMaxSize()) {
-                                    drawCircle(Color(0xFF1D2433), style = Stroke(12.dp.toPx()))
-                                    drawArc(
-                                        brush = Brush.sweepGradient(listOf(Color(0xFF3B82F6), Color(0xFF10B981))),
-                                        startAngle = -90f, sweepAngle = (score / 100f) * 360f, useCenter = false, style = Stroke(12.dp.toPx(), cap = StrokeCap.Round)
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("${score.toInt()}%", fontSize = 48.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                                    Text("Overall Match", fontSize = 14.sp, color = Color(0xFFC2C6D6))
-                                }
-                            }
-                            Spacer(Modifier.height(48.dp))
-                        }
-
-                        item {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Column(Modifier.weight(1f)) {
-                                    Text("Required Skills", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFE1E2E4))
-                                    Spacer(Modifier.height(16.dp))
-                                    matched.forEach { skill ->
-                                        Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(skill, color = Color(0xFFC2C6D6), fontSize = 14.sp)
-                                        }
-                                    }
-                                    missing.forEach { skill ->
-                                        Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.Cancel, null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(skill, color = Color(0xFFC2C6D6), fontSize = 14.sp)
-                                        }
-                                    }
-                                }
-                                Column(Modifier.weight(1f)) {
-                                    Text("Your Skills", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFE1E2E4))
-                                    Spacer(Modifier.height(16.dp))
-                                    matched.forEach { skill ->
-                                        Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(skill, color = Color(0xFFC2C6D6), fontSize = 14.sp)
-                                        }
-                                    }
-                                    missing.forEach { _ ->
-                                        Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.RemoveCircleOutline, null, tint = Color(0xFF1D2433), modifier = Modifier.size(20.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text("Missing", color = Color(0xFFC2C6D6).copy(alpha=0.5f), fontSize = 14.sp)
-                                        }
-                                    }
-                                }
-                            }
-                            Spacer(Modifier.height(48.dp))
-                        }
-
+                        item { Spacer(Modifier.height(16.dp)) }
+                        
+                        // OVERALL MATCH CARD
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF8B5CF6).copy(alpha=0.1f)),
-                                border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha=0.3f))
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(StSurface),
+                                border = BorderStroke(1.dp, StOutlineVariant),
+                                elevation = CardDefaults.cardElevation(2.dp)
+                            ) {
+                                Column(Modifier.padding(32.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Box(Modifier.size(160.dp), Alignment.Center) {
+                                        Canvas(Modifier.fillMaxSize()) {
+                                            drawCircle(StOutlineVariant, style = Stroke(12.dp.toPx()))
+                                            drawArc(
+                                                color = StPrimary,
+                                                startAngle = -90f, sweepAngle = (score / 100f) * 360f, useCenter = false, style = Stroke(12.dp.toPx(), cap = StrokeCap.Round)
+                                            )
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("${score.toInt()}%", fontSize = 48.sp, fontWeight = FontWeight.ExtraBold, color = StOnSurface)
+                                        }
+                                    }
+                                    Spacer(Modifier.height(16.dp))
+                                    Text("Overall Match Score", fontSize = 16.sp, color = StTextSecondary, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                            Spacer(Modifier.height(24.dp))
+                        }
+
+                        // SKILL ANALYSIS SECTION
+                        item {
+                            Column(Modifier.fillMaxWidth()) {
+                                Text("Skill Analysis", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = StOnSurface)
+                                Spacer(Modifier.height(16.dp))
+                                
+                                if (matched.isNotEmpty()) {
+                                    Text("Matched Skills", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = StSuccess)
+                                    Spacer(Modifier.height(8.dp))
+                                    matched.forEach { skill ->
+                                        Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.CheckCircle, null, tint = StSuccess, modifier = Modifier.size(20.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(skill, color = StOnSurface, fontSize = 14.sp)
+                                        }
+                                    }
+                                    Spacer(Modifier.height(16.dp))
+                                }
+                                
+                                if (missing.isNotEmpty()) {
+                                    Text("Missing Skills", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = StError)
+                                    Spacer(Modifier.height(8.dp))
+                                    missing.forEach { skill ->
+                                        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.ErrorOutline, null, tint = StError, modifier = Modifier.size(20.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(skill, color = StOnSurface, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                            Surface(color = StSurface, shape = RoundedCornerShape(25.dp), border = BorderStroke(1.dp, StOutlineVariant)) {
+                                                Text("Learn", color = StTextSecondary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(24.dp))
+                        }
+
+                        // AI RECOMMENDATIONS
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(StMatchBadgeBg),
+                                border = BorderStroke(1.dp, StOutlineVariant)
                             ) {
                                 Column(Modifier.padding(24.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.AutoAwesome, null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(24.dp))
+                                        Icon(Icons.Default.Lightbulb, null, tint = StPrimary, modifier = Modifier.size(24.dp))
                                         Spacer(Modifier.width(12.dp))
-                                        Text("Gemini's Advice", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF8B5CF6))
+                                        Text("AI Recommendations", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = StPrimary)
                                     }
                                     Spacer(Modifier.height(12.dp))
-                                    Text(rec, color = Color(0xFFE1E2E4), fontSize = 15.sp, lineHeight = 24.sp)
+                                    Text(rec, color = StOnSurface, fontSize = 15.sp, lineHeight = 24.sp)
                                 }
                             }
                             Spacer(Modifier.height(48.dp))

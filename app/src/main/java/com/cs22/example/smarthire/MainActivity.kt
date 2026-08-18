@@ -49,9 +49,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     NavHost(navController = navController, startDestination = "splash") {
-                        composable("onboarding") {
-                            OnboardingScreen(navController = navController)
-                        }
                         composable("splash") {
                             SplashScreen(
                                 viewModel = authViewModel,
@@ -134,7 +131,7 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("applicationId") { type = NavType.StringType })
                         ) { backStackEntry ->
                             val appId = backStackEntry.arguments?.getString("applicationId") ?: return@composable
-                            ChatScreen(applicationId = appId)
+                            ChatScreen(applicationId = appId, navController = navController)
                         }
                         composable(
                             route = "interview_schedule/{applicationId}",
@@ -144,7 +141,7 @@ class MainActivity : ComponentActivity() {
                             InterviewScheduleScreen(navController = navController, interviews = emptyList(), onDelete = {})
                         }
                         composable("notifications") {
-                            NotificationScreen(navController = navController)
+                            com.cs22.example.smarthire.ui.seeker.NotificationsScreen(navController = navController)
                         }
                         composable("cv_vault") {
                             CvVaultScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
@@ -162,6 +159,9 @@ class MainActivity : ComponentActivity() {
                         composable("job_wizard") {
                             JobPostingWizardScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
                         }
+                        composable("post_job_wizard") {
+                            JobPostingWizardScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
+                        }
                         composable("analytics") {
                             AnalyticsDashboardScreen(viewModel = androidx.lifecycle.viewmodel.compose.viewModel(), navController = navController)
                         }
@@ -173,6 +173,17 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(
                             route = "candidate_profile/{applicationId}",
+                            arguments = listOf(navArgument("applicationId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val appId = backStackEntry.arguments?.getString("applicationId") ?: return@composable
+                            CandidateProfileScreen(
+                                applicationId = appId,
+                                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                                navController = navController
+                            )
+                        }
+                        composable(
+                            route = "candidate/{applicationId}",
                             arguments = listOf(navArgument("applicationId") { type = NavType.StringType })
                         ) { backStackEntry ->
                             val appId = backStackEntry.arguments?.getString("applicationId") ?: return@composable

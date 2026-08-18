@@ -203,7 +203,7 @@ object RetrofitClient {
     // ═══════════════════════════════════════════════════
     // For local development: "http://192.168.1.40:8000/"
     // For Railway cloud: "https://your-app.up.railway.app/"
-    private const val BASE_URL = "https://Yaqoob9227.pythonanywhere.com/"
+    const val BASE_URL = "https://Yaqoob9227.pythonanywhere.com/"
     
     lateinit var tokenManager: TokenManager
 

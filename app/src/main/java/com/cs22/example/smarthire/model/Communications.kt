@@ -31,6 +31,8 @@ data class Notification(
 )
 
 data class SendMessageRequest(
-    val application_id: String,
-    val text: String
+    val thread_id: String = "",
+    val content: String = "",
+    val application_id: String = "",
+    val text: String = ""
 )

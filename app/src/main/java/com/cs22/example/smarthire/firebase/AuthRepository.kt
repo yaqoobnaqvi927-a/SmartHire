@@ -58,25 +58,58 @@ object AuthRepository {
         val uid = result.user?.uid ?: throw Exception("User not found")
         val isNewUser = result.additionalUserInfo?.isNewUser == true
 
+        val dbRole = if (selectedRole == "recruiter") "recruiter" else "student"
+        val displayName = result.user?.displayName ?: "User"
+        val emailStr = result.user?.email ?: ""
+        val photoUrlStr = result.user?.photoUrl?.toString() ?: ""
+
+        val userDoc = mutableMapOf<String, Any>(
+            "uid"            to uid,
+            "email"          to emailStr,
+            "username"       to displayName,
+            "full_name"      to displayName,
+            "role"           to dbRole,
+            "photo_url"      to photoUrlStr,
+            "setup_complete" to true
+        )
+
         if (isNewUser) {
-            val dbRole = if (selectedRole == "recruiter") "recruiter" else "student"
-            // Auto-create Firestore profile for new Google users
-            val userDoc = mapOf(
-                "uid"            to uid,
-                "email"          to (result.user?.email ?: ""),
-                "username"       to (result.user?.displayName ?: "User"),
-                "role"           to dbRole,
-                "created_at"     to com.google.firebase.Timestamp.now(),
-                "setup_complete" to false,
-                "photo_url"      to result.user?.photoUrl?.toString()
-            )
+            userDoc["created_at"] = com.google.firebase.Timestamp.now()
             db.collection(Collections.USERS).document(uid).set(userDoc).await()
 
-            // Create role-specific profile sub-document
+            // Create role-specific profile sub-document with prefilled Google credentials
             val profileCollection = if (dbRole == "recruiter") "recruiter_profile" else "candidate_profile"
+            val initialProfile = if (dbRole == "recruiter") {
+                mapOf(
+                    "uid" to uid,
+                    "role" to dbRole,
+                    "name" to displayName,
+                    "email" to emailStr,
+                    "photo_url" to photoUrlStr,
+                    "company_name" to "Company",
+                    "bio" to "Talent Acquisition & Hiring Manager"
+                )
+            } else {
+                mapOf(
+                    "uid" to uid,
+                    "role" to dbRole,
+                    "full_name" to displayName,
+                    "email" to emailStr,
+                    "photo_url" to photoUrlStr,
+                    "bio" to "Professional Job Seeker on SmartHire."
+                )
+            }
             db.collection(Collections.USERS).document(uid)
                 .collection(profileCollection).document("profile")
-                .set(mapOf("uid" to uid, "role" to dbRole)).await()
+                .set(initialProfile).await()
+        } else {
+            // Synchronize photo and name on returning logins
+            val updateMap = mutableMapOf<String, Any>(
+                "username" to displayName,
+                "full_name" to displayName
+            )
+            if (photoUrlStr.isNotEmpty()) updateMap["photo_url"] = photoUrlStr
+            db.collection(Collections.USERS).document(uid).update(updateMap)
         }
         Pair(uid, isNewUser)
     }

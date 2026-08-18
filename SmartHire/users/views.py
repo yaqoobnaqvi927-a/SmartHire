@@ -194,21 +194,42 @@ class GoogleLoginView(views.APIView):
             if not email:
                 return Response({'error': 'No email from Google'}, status=status.HTTP_400_BAD_REQUEST)
 
+            full_name = token_info.get('name', '')
+            given_name = token_info.get('given_name', '')
+            family_name = token_info.get('family_name', '')
+            picture_url = token_info.get('picture', '')
+
             user, created = User.objects.get_or_create(email=email, defaults={
                 'username': email.split('@')[0],
                 'role_type': role,
-                'full_name': token_info.get('name', '')
+                'full_name': full_name,
+                'first_name': given_name,
+                'last_name': family_name
             })
             
             if created:
                 user.set_unusable_password()
-                user.first_name = token_info.get('given_name', '')
-                user.last_name = token_info.get('family_name', '')
                 user.save()
                 if user.role_type == 'student':
-                    CandidateProfile.objects.create(user=user)
+                    CandidateProfile.objects.create(
+                        user=user,
+                        bio=f"Professional profile of {full_name or user.username}."
+                    )
                 elif user.role_type == 'recruiter':
-                    RecruiterProfile.objects.create(user=user, company_name='')
+                    RecruiterProfile.objects.create(
+                        user=user, 
+                        company_name='Company',
+                        company_logo_url=picture_url
+                    )
+            else:
+                # Update existing user profile info from Google
+                if full_name and not user.full_name:
+                    user.full_name = full_name
+                if given_name and not user.first_name:
+                    user.first_name = given_name
+                if family_name and not user.last_name:
+                    user.last_name = family_name
+                user.save()
 
             refresh = RefreshToken.for_user(user)
             
@@ -216,13 +237,20 @@ class GoogleLoginView(views.APIView):
             if user.role_type == 'recruiter' and hasattr(user, 'recruiter_profile'):
                 setup_complete = bool(user.recruiter_profile.company_name)
             elif user.role_type == 'student' and hasattr(user, 'candidate_profile'):
-                setup_complete = bool(user.candidate_profile.extracted_skills_json)
+                setup_complete = bool(user.candidate_profile.extracted_skills_json or user.candidate_profile.bio)
 
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'role': user.role_type,
                 'setup_complete': setup_complete,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'full_name': user.full_name,
+                    'photo_url': picture_url
+                }
             })
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

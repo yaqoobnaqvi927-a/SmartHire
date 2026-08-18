@@ -3,11 +3,12 @@ import django
 import random
 from django.utils import timezone
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smarthire_backend.settings.development')
-try:
-    django.setup()
-except Exception:
-    pass
+if __name__ == '__main__':
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smarthire_backend.settings.development')
+    try:
+        django.setup()
+    except Exception:
+        pass
 
 from django.contrib.auth import get_user_model
 from users.models import RecruiterProfile, CandidateProfile

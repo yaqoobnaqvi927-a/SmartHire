@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,91 +23,75 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cs22.example.smarthire.ui.theme.*
 import kotlinx.coroutines.delay
 
-private val PremiumSurface = Color(0xFF161B28)
-private val PremiumText = Color(0xFFE1E2E4)
-
 enum class ToastType {
-    SUCCESS, WARNING, ERROR, INFO
+    SUCCESS, ERROR, INFO, WARNING
 }
 
-data class PremiumToastData(
+data class ToastMessage(
     val message: String,
-    val type: ToastType
+    val type: ToastType = ToastType.INFO
 )
 
-class ToastState(initialToast: PremiumToastData? = null) {
-    var toastData by mutableStateOf(initialToast)
-        private set
-
-    fun show(message: String, type: ToastType) {
-        toastData = PremiumToastData(message, type)
-    }
-
-    fun dismiss() {
-        toastData = null
-    }
-}
-
 @Composable
-fun rememberToastState(): ToastState {
-    return remember { ToastState() }
-}
-
-@Composable
-fun PremiumToast(data: PremiumToastData?, onDismiss: () -> Unit) {
+fun PremiumToast(message: ToastMessage?, onDismiss: () -> Unit) {
     Box(
         modifier = Modifier.fillMaxWidth().padding(16.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         AnimatedVisibility(
-            visible = data != null,
+            visible = message != null,
             enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
         ) {
-            if (data != null) {
-                LaunchedEffect(data) {
+            if (message != null) {
+                LaunchedEffect(message) {
                     delay(3000)
                     onDismiss()
                 }
 
-                val (borderColor, icon) = when (data.type) {
-                    ToastType.SUCCESS -> Color(0xFF10B981) to Icons.Default.CheckCircle
-                    ToastType.ERROR -> Color(0xFFEF4444) to Icons.Default.Error
-                    ToastType.WARNING -> Color(0xFFF59E0B) to Icons.Default.Warning
-                    ToastType.INFO -> Color(0xFF3B82F6) to Icons.Default.Info
+                val (borderColor, icon) = when (message.type) {
+                    ToastType.SUCCESS -> StSuccess to Icons.Default.CheckCircle
+                    ToastType.ERROR -> StError to Icons.Default.Error
+                    ToastType.INFO -> StPrimary to Icons.Default.Info
+                    ToastType.WARNING -> StWarning to Icons.Default.Warning
                 }
 
-                Row(
-                    modifier = Modifier
-                        .height(IntrinsicSize.Min)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(PremiumSurface),
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = StSurface,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.wrapContentSize()
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(4.dp)
-                            .background(borderColor)
-                    )
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                        modifier = Modifier.height(IntrinsicSize.Min),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = borderColor,
-                            modifier = Modifier.size(24.dp)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(4.dp)
+                                .background(borderColor)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = data.message,
-                            color = PremiumText,
-                            fontSize = 14.sp
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = borderColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = message.message,
+                                color = StOnSurface,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }

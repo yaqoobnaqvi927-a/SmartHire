@@ -1,42 +1,34 @@
 package com.cs22.example.smarthire.ui.components
 
-import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.cs22.example.smarthire.model.InterviewResponse
+import com.cs22.example.smarthire.ui.theme.*
 import com.cs22.example.smarthire.viewmodel.RecruiterUiState
 import com.cs22.example.smarthire.viewmodel.RecruiterViewModel
 import com.cs22.example.smarthire.viewmodel.SeekerUiState
 import com.cs22.example.smarthire.viewmodel.SeekerViewModel
-
-private val PremiumBg = Color(0xFF0F131D)
-private val PremiumSurface = Color(0xFF161B28)
-private val PremiumSurfaceContainer = Color(0xFF1D2433)
-private val PremiumPrimary = Color(0xFF3B82F6)
-private val PremiumSecondary = Color(0xFF8B5CF6)
-private val PremiumText = Color(0xFFE1E2E4)
-private val PremiumTextMuted = Color(0xFFC2C6D6)
 
 @Composable
 fun SeekerInterviewScreen(navController: NavController, viewModel: SeekerViewModel) {
@@ -50,7 +42,6 @@ fun SeekerInterviewScreen(navController: NavController, viewModel: SeekerViewMod
 fun RecruiterInterviewScreen(navController: NavController, viewModel: RecruiterViewModel) {
     val applicationsState by viewModel.applicationsState.collectAsState()
     val applications = (applicationsState as? RecruiterUiState.Success)?.data ?: emptyList()
-    // Derive interviews from applications in interview/shortlisted status
     val interviews = applications
         .filter { it.effectiveStatus.lowercase() in listOf("interview", "shortlisted", "scheduled") }
         .map { app ->
@@ -75,170 +66,149 @@ fun InterviewScheduleScreen(
     onDelete: (String) -> Unit
 ) {
     val upcoming = interviews.filter { it.status == "scheduled" }
-    val past = interviews.filter { it.status != "scheduled" }
-
+    var selectedDay by remember { mutableStateOf("Mon") }
+    
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Interviews", color = PremiumText) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PremiumBg)
+                title = { Text("Interview Schedule", color = StOnSurface, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = StOnSurface)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = StBackground)
             )
         },
-        containerColor = PremiumBg
+        containerColor = StBackground
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             item {
-                Text("Upcoming", color = PremiumText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                if (upcoming.isEmpty()) {
-                    Text("No upcoming interviews.", color = PremiumTextMuted, fontStyle = FontStyle.Italic)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
+                        val isActive = day == selectedDay
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable { selectedDay = day }
+                        ) {
+                            Text(day, fontSize = 12.sp, color = if (isActive) StPrimary else StTextSecondary)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isActive) StPrimary else Color.Transparent),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("12", color = if (isActive) Color.White else StOnSurface, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
                 }
-            }
-
-            items(upcoming) { interview ->
-                InterviewCard(navController = navController, interview = interview, isUpcoming = true, onDelete = { interview.id?.let { onDelete(it) } })
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Past", color = PremiumText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                if (past.isEmpty()) {
-                    Text("No past interviews.", color = PremiumTextMuted, fontStyle = FontStyle.Italic)
-                }
-            }
-
-            items(past) { interview ->
-                InterviewCard(navController = navController, interview = interview, isUpcoming = false, onDelete = { interview.id?.let { onDelete(it) } })
             }
             
-            item { Spacer(modifier = Modifier.height(32.dp)) }
+            item {
+                Text("Available Slots", color = StOnSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SlotCard(time = "09:00 AM", duration = "30 min", isSelected = true)
+                    SlotCard(time = "10:30 AM", duration = "45 min", isSelected = false)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SlotCard(time = "02:00 PM", duration = "30 min", isSelected = false)
+                    SlotCard(time = "04:00 PM", duration = "60 min", isSelected = false)
+                }
+            }
+            
+            item {
+                Text("Booked Interviews", color = StOnSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+            
+            items(upcoming) { interview ->
+                InterviewTimelineCard(navController = navController, interview = interview)
+            }
+            
+            item {
+                Button(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(25.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = StPrimary)
+                ) {
+                    Text("Schedule New Interview", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+            }
         }
     }
 }
 
 @Composable
-fun InterviewCard(navController: NavController, interview: InterviewResponse, isUpcoming: Boolean, onDelete: () -> Unit = {}) {
-    val infiniteTransition = rememberInfiniteTransition()
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
-    val modifier = if (isUpcoming) {
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(PremiumSurface)
-            .border(1.5.dp, PremiumPrimary.copy(alpha = pulseAlpha), RoundedCornerShape(12.dp))
-            .padding(16.dp)
-    } else {
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(PremiumSurface.copy(alpha = 0.6f))
-            .padding(16.dp)
-            .alpha(0.7f)
+fun SlotCard(time: String, duration: String, isSelected: Boolean) {
+    Card(
+        modifier = Modifier.width(160.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isSelected) StMatchBadgeBg else StSurface),
+        border = BorderStroke(1.dp, if (isSelected) StPrimary else StOutlineVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(time, color = if (isSelected) StPrimary else StOnSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(duration, color = if (isSelected) StPrimary.copy(alpha = 0.8f) else StTextSecondary, fontSize = 12.sp)
+        }
     }
+}
 
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+@Composable
+fun InterviewTimelineCard(navController: NavController, interview: InterviewResponse) {
+    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(60.dp)) {
+            Text("10:00", fontWeight = FontWeight.Bold, color = StOnSurface, fontSize = 14.sp)
+            Text("AM", color = StTextSecondary, fontSize = 12.sp)
+            Box(modifier = Modifier.width(2.dp).height(80.dp).background(StOutlineVariant).padding(vertical = 8.dp))
+        }
+        
+        Card(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = StSurface),
+            border = BorderStroke(1.dp, StOutlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = interview.company ?: "Company",
-                    color = PremiumText,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                Text(
-                    text = interview.job_title ?: "Role",
-                    color = PremiumTextMuted,
-                    fontSize = 14.sp
-                )
-            }
-            if (!isUpcoming) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle, 
-                    contentDescription = "Completed", 
-                    tint = Color(0xFF10B981), 
-                    modifier = Modifier.size(24.dp)
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(PremiumSurfaceContainer)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(StMatchBadgeBg), contentAlignment = Alignment.Center) {
+                        Text(interview.candidate_name?.firstOrNull()?.toString() ?: "C", color = StPrimary, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(interview.candidate_name ?: "Candidate Name", fontWeight = FontWeight.Bold, color = StOnSurface, fontSize = 16.sp)
+                        Text(interview.job_title ?: "Role", color = StTextSecondary, fontSize = 14.sp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedButton(
+                    onClick = { navController.navigate("video_call") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(25.dp),
+                    border = BorderStroke(1.dp, StPrimary),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = StPrimary)
                 ) {
-                    Text("Scheduled", color = PremiumPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Join Video Call")
                 }
             }
         }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.DateRange, contentDescription = null, tint = PremiumTextMuted, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = interview.scheduled_at?.take(16)?.replace("T", " ") ?: "Time TBD",
-                    color = PremiumTextMuted,
-                    fontSize = 12.sp
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(PremiumSurfaceContainer)
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text("${interview.duration_minutes ?: 30} min", color = PremiumTextMuted, fontSize = 10.sp)
-                }
-            }
-
-            if (isUpcoming) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel Interview", tint = Color(0xFFEF4444))
-                    }
-                    Button(
-                        onClick = { navController.navigate("video_call") },
-                        colors = ButtonDefaults.buttonColors(containerColor = PremiumPrimary),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        modifier = Modifier.height(32.dp)
-                    ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = "Join Call", modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Join Call", fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Candidate: ${interview.candidate_name ?: "Unknown"}",
-            color = PremiumTextMuted,
-            fontSize = 12.sp
-        )
     }
 }

@@ -90,7 +90,8 @@ data class CandidateProfileResponse(
     val certifications_json: List<String>? = null,
     val profile_completeness: Int = 0,
     val profile_views_count: Int = 0,
-    val is_searchable: Boolean = true
+    val is_searchable: Boolean = true,
+    val photo_url: String? = null
 )
 
 data class UserInfo(
@@ -99,7 +100,8 @@ data class UserInfo(
     val email: String = "",
     val first_name: String = "",
     val last_name: String = "",
-    val full_name: String = ""
+    val full_name: String = "",
+    val photo_url: String? = null
 )
 
 // ═══════════════════════════════════════════════════
@@ -135,6 +137,7 @@ data class ProfileResponse(
     val email: String? = null,
     val role_type: String? = null,
     val full_name: String? = null,
+    val photo_url: String? = null,
     val profile: CandidateProfileResponse? = null,
     val university: String? = null,
     val degree: String? = null,

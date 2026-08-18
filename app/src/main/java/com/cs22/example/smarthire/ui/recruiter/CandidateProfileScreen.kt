@@ -1,9 +1,5 @@
 package com.cs22.example.smarthire.ui.recruiter
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -13,35 +9,25 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.cs22.example.smarthire.ui.theme.*
 import com.cs22.example.smarthire.viewmodel.RecruiterUiState
 import com.cs22.example.smarthire.viewmodel.RecruiterViewModel
-import kotlinx.coroutines.delay
 
-private val PremiumBg = Color(0xFF0F131D)
-private val PremiumSurface = Color(0xFF161B28)
-private val PremiumSurfaceContainer = Color(0xFF1D2433)
-private val PremiumPrimary = Color(0xFF3B82F6)
-private val PremiumSecondary = Color(0xFF8B5CF6)
-private val PremiumText = Color(0xFFE1E2E4)
-private val PremiumTextMuted = Color(0xFFC2C6D6)
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CandidateProfileScreen(
     navController: NavController,
@@ -54,250 +40,192 @@ fun CandidateProfileScreen(
     val candidate = application?.effectiveCandidate
 
     if (candidate == null) {
-        Box(modifier = Modifier.fillMaxSize().background(PremiumBg), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = PremiumPrimary)
+        Box(modifier = Modifier.fillMaxSize().background(StBackground), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = StPrimary)
         }
         return
     }
 
-    val scrollState = rememberScrollState()
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Candidate Profile", color = PremiumText) },
+                title = { Text("Candidate Profile", color = StOnSurface, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = PremiumText)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = StOnSurface)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = PremiumBg
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = StBackground)
             )
         },
-        containerColor = PremiumBg
+        containerColor = StBackground
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .verticalScroll(scrollState)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Hero Section
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(PremiumPrimary, PremiumSecondary)
-                        )
-                    ),
-                contentAlignment = Alignment.BottomCenter
+            // Hero Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = StSurface),
+                border = BorderStroke(1.dp, StOutlineVariant),
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                val firstName = candidate.user?.first_name ?: ""
-                val lastName = candidate.user?.last_name ?: ""
-                val initials = "${firstName.firstOrNull() ?: ""}${lastName.firstOrNull() ?: ""}"
-                
-                Box(
-                    modifier = Modifier
-                        .offset(y = 40.dp)
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(PremiumSurfaceContainer)
-                        .border(4.dp, PremiumBg, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = initials.uppercase(),
-                        color = PremiumText,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(50.dp))
-
-            // Details
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "${candidate.user?.first_name ?: ""} ${candidate.user?.last_name ?: ""}".trim(),
-                    color = PremiumText,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${candidate.degree ?: "Degree"} at ${candidate.university ?: "University"}",
-                    color = PremiumTextMuted,
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Button(
-                        onClick = { navController.navigate("chat/${applicationId}") },
-                        colors = ButtonDefaults.buttonColors(containerColor = PremiumPrimary)
-                    ) {
-                        Text("💬 Chat")
-                    }
-                    Button(
-                        onClick = { navController.navigate("recruiter_interviews") },
-                        colors = ButtonDefaults.buttonColors(containerColor = PremiumSurfaceContainer)
-                    ) {
-                        Text("📅 Interviews", color = PremiumText)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Match Score & Bio
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Match Score
-                Card(
-                    modifier = Modifier.weight(1f),
-                    colors = CardDefaults.cardColors(containerColor = PremiumSurface)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("AI Match", color = PremiumTextMuted, fontSize = 14.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        val targetScore = candidate.match_percentage.toFloat() / 100f
-                        var animationPlayed by remember { mutableStateOf(false) }
-                        val currentScore by animateFloatAsState(
-                            targetValue = if (animationPlayed) targetScore else 0f,
-                            animationSpec = tween(1500, easing = FastOutSlowInEasing)
-                        )
-
-                        LaunchedEffect(Unit) {
-                            animationPlayed = true
-                        }
-
-                        Box(
-                            modifier = Modifier.size(80.dp),
-                            contentAlignment = Alignment.Center
+                Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        Surface(
+                            shape = RoundedCornerShape(25.dp),
+                            color = StMatchBadgeBg
                         ) {
-                            Canvas(modifier = Modifier.size(80.dp)) {
-                                drawArc(
-                                    color = PremiumSurfaceContainer,
-                                    startAngle = 140f,
-                                    sweepAngle = 260f,
-                                    useCenter = false,
-                                    style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
-                                )
-                                drawArc(
-                                    brush = Brush.linearGradient(listOf(PremiumPrimary, PremiumSecondary)),
-                                    startAngle = 140f,
-                                    sweepAngle = 260f * currentScore,
-                                    useCenter = false,
-                                    style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
-                                )
-                            }
                             Text(
-                                text = "${(currentScore * 100).toInt()}%",
-                                color = PremiumText,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
+                                "⚡ ${candidate.match_percentage}% Match", 
+                                color = StPrimary, 
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                fontSize = 14.sp
                             )
                         }
                     }
-                }
-
-                // Quick Info
-                Card(
-                    modifier = Modifier.weight(1f),
-                    colors = CardDefaults.cardColors(containerColor = PremiumSurface)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    
+                    val initials = "${candidate.user?.first_name?.firstOrNull() ?: ""}${candidate.user?.last_name?.firstOrNull() ?: ""}".uppercase()
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(StMatchBadgeBg),
+                        contentAlignment = Alignment.Center
                     ) {
-                        InfoRow(icon = Icons.Default.LocationOn, text = candidate.location ?: "N/A")
-                        InfoRow(icon = Icons.Default.Star, text = "${candidate.experience_years ?: 0} yrs exp")
-                        InfoRow(icon = Icons.Default.Email, text = candidate.user?.email ?: "N/A")
+                        Text(text = initials, color = StPrimary, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "${candidate.user?.first_name ?: ""} ${candidate.user?.last_name ?: ""}".trim(),
+                        color = StOnSurface,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(text = candidate.bio ?: "No bio provided", color = StOnSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        InfoChip(Icons.Default.LocationOn, candidate.location ?: "N/A")
+                        InfoChip(Icons.Default.Star, "${candidate.experience_years ?: 0} yrs exp")
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedButton(
+                            onClick = { navController.navigate("chat/${applicationId}") },
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            shape = RoundedCornerShape(25.dp),
+                            border = BorderStroke(1.dp, StPrimary)
+                        ) {
+                            Text("Message", color = StPrimary, fontWeight = FontWeight.Bold)
+                        }
+                        Button(
+                            onClick = { navController.navigate("recruiter_interviews") },
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            shape = RoundedCornerShape(25.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = StPrimary)
+                        ) {
+                            Text("Schedule Interview", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Bio
-            if (!candidate.bio.isNullOrBlank()) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    Text("Bio", color = PremiumText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = candidate.bio ?: "",
-                        color = PremiumTextMuted,
-                        fontSize = 14.sp,
-                        lineHeight = 20.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            // Skills
+            // Skills Card
             if (!candidate.extracted_skills_json.isNullOrEmpty()) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    Text("Skills", color = PremiumText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    @OptIn(ExperimentalLayoutApi::class)
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        candidate.extracted_skills_json.forEachIndexed { index, skill ->
-                            var visible by remember { mutableStateOf(false) }
-                            LaunchedEffect(Unit) {
-                                delay(index * 100L)
-                                visible = true
-                            }
-                            
-                            AnimatedVisibility(
-                                visible = visible,
-                                enter = fadeIn() + scaleIn()
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(PremiumSurfaceContainer)
-                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = StSurface),
+                    border = BorderStroke(1.dp, StOutlineVariant)
+                ) {
+                    Column(Modifier.padding(20.dp)) {
+                        Text("Top Skills", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = StOnSurface)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            candidate.extracted_skills_json.forEach { skill ->
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = StMatchBadgeBg
                                 ) {
-                                    Text(text = skill, color = PremiumText, fontSize = 12.sp)
+                                    Text(text = skill, color = StPrimary, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
                                 }
                             }
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            // Experience Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = StSurface),
+                border = BorderStroke(1.dp, StOutlineVariant)
+            ) {
+                Column(Modifier.padding(20.dp)) {
+                    Text("Experience & Education", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = StOnSurface)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Row(verticalAlignment = Alignment.Top) {
+                        Box(Modifier.background(StMatchBadgeBg, CircleShape).padding(8.dp)) {
+                            Icon(Icons.Default.School, null, tint = StPrimary, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(candidate.degree ?: "Degree", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = StOnSurface)
+                            Text(candidate.university ?: "University", fontSize = 14.sp, color = StOnSurfaceVariant)
+                        }
+                    }
+                }
+            }
+
+            // AI Analysis Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = StSurface),
+                border = BorderStroke(1.dp, StOutlineVariant)
+            ) {
+                Column(Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.AutoAwesome, null, tint = StPrimary)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Gemini Analysis", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = StOnSurface)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Highly recommended candidate. Shows strong alignment with required skills and experience level. Technical background matches the role profile.", fontSize = 14.sp, color = StOnSurfaceVariant)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Strengths", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = StOnSurface)
+                    Text("• Matching degree requirement\n• Core skills present", fontSize = 14.sp, color = StOnSurfaceVariant)
+                }
             }
         }
     }
 }
 
 @Composable
-fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = PremiumPrimary, modifier = Modifier.size(16.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text, color = PremiumTextMuted, fontSize = 12.sp, maxLines = 1)
+fun InfoChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = StSurfaceContainer
+    ) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = StOnSurfaceVariant, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(text, color = StOnSurfaceVariant, fontSize = 12.sp)
+        }
     }
 }
